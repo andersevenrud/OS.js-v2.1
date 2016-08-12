@@ -115,6 +115,8 @@
         scheme.find(this, "ID_LBL_WS2_PASSWORD").set("value", OSjs.Applications.ApplicationArduinoWizardSettings._('LBL_PASSWORD'));
         txtSystemPassword.set("placeholder", OSjs.Applications.ApplicationArduinoWizardSettings._('PLHL_PASSWORD'));
         txtSystemPasswordConfirm.set("placeholder", OSjs.Applications.ApplicationArduinoWizardSettings._('PLHL_CONF_PASSWORD'));
+        txtSystemPassword.set("autocomplete", "off");
+        txtSystemPasswordConfirm.set("autocomplete", "off");
 
         /* Step 3 - WiFi Setting */
         scheme.find(this, "ID_LBL_WS3_LN1").set("value", OSjs.Applications.ApplicationArduinoWizardSettings._('LBL_WIFI_1LN'));
@@ -557,7 +559,7 @@
     };
 
     ApplicationArduinoWizardSettingsWindow.prototype.destroy = function () {
-        Window.prototype.destroy.apply(this, arguments);
+      Window.prototype.destroy.apply(this, arguments);
     };
 
     /////////////////////////////////////////////////////////////////////////////
@@ -573,7 +575,15 @@
     ApplicationArduinoWizardSettings.constructor = Application;
 
     ApplicationArduinoWizardSettings.prototype.destroy = function () {
-        return Application.prototype.destroy.apply(this, arguments);
+      var that = this;
+      API.createDialog("Confirm", {buttons: ['yes', 'no'], message: "Do you want Arduino Configuration Wizard to be shown next time?" },
+        function(ev, button) {
+          var pool = OSjs.Core.getSettingsManager().instance('Wizard');
+          pool.set('completed', button=="yes"? false : true, function(){
+            console.log("WIZARD " + button=="yes"? "ENABLED":"DISABLED");
+          });
+          return Application.prototype.destroy.apply(that, arguments);
+        });
     };
 
     ApplicationArduinoWizardSettings.prototype.init = function (settings, metadata) {
