@@ -36,7 +36,7 @@ html, body {
 body {
   margin : 0;
   padding : 0;
-  background-color : #31989D;
+  background-color : #572a79;
 }
 body, input, button, textarea, label, select {
   font-size : 12px;
@@ -108,12 +108,12 @@ body, input, button, textarea, label, select {
 
 #LoadingScreen {
   position : absolute;
-  width : 400px;
-  height : 400px;
+  width : 320px;
+  height : 182px;
   top : 50%;
   left : 50%;
-  margin-top : -200px;
-  margin-left : -200px;
+  margin-top : -91px;
+  margin-left : -160px;
   z-index : 999;
 }
   #LoadingScreen span {
@@ -193,7 +193,7 @@ application-splash {
       display : none;
     }
     #LoadingScreen application-splash > gui-progress-bar > div {
-      background : #c5ab7c;//rgb(87, 42, 121);
+      background : rgb(87, 42, 121);
     }
 
 /**
@@ -231,13 +231,6 @@ body[data-attention="true"]:after {
   z-index : 2;
   opacity : .7;
   cursor : default;
-
-  display : none;
-  -webkit-user-select : none;
-     -moz-user-select : none;
-      -ms-user-select : none;
-       -o-user-select : none;
-          user-select : none;
 }
 
   #DebugNotice a {
