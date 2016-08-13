@@ -46,6 +46,10 @@
               "icon": "categories/package_utilities.png",
               "title": "Utilities"
             },
+            "arduino": {
+              "icon": "arduino.png",
+              "title": "Arduino"
+            },
             "unknown": {
               "icon": "categories/applications-other.png",
               "title": "Other"
