@@ -58,7 +58,13 @@
           "icons"           : "default",
           "sounds"          : "default",
           "background"      : "image-center",
-          "enableSounds"    : false
+          "enableSounds"    : false,
+          "menu": {
+            "arduino": {
+              "icon": "arduino.png",
+              "title": "Arduino"
+            }
+          }
         }
       }
     }
