@@ -103,14 +103,16 @@ for g in $GREPPED; do
 done
 
 cp -v $OUTDIR/dist/themes/icons/default/16x16/*.png $TMPDIR/16x16/
+cp -v $OUTDIR/dist/themes/icons/default/16x16/arduino $TMPDIR/16x16/
 cp -v $OUTDIR/dist/themes/icons/default/32x32/*.png $TMPDIR/32x32/
+cp -v $OUTDIR/dist/themes/icons/default/32x32/arduino $TMPDIR/32x32/
 
 rm -rf $OUTDIR/dist/themes/icons/default/*
 mv -v $TMPDIR/* $OUTDIR/dist/themes/icons/default/
 
 rm -rf $OUTDIR/dist/themes/sounds/*
 rm -rf $OUTDIR/dist/themes/wallpapers/*
-cp -v src/client/themes/wallpapers/arduino-logo.jpg $OUTDIR/dist/themes/wallpapers/
+cp -v src/client/themes/wallpapers/arduino-* $OUTDIR/dist/themes/wallpapers/
 
 # Cleanup
 rm $OUTDIR/dist/.htaccess 2>/dev/null
