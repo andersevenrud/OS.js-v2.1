@@ -11,7 +11,8 @@
     "icons": ["default"],
     "styles": ["material"],
     "sounds": [],
-    "fonts": ["Karla"]
+    "fonts": ["Karla"],
+    "styleBase": "arduino.less"
   },
 
   "client" : {
@@ -78,8 +79,10 @@
   ],
 
   "javascript": [
+    "src/client/javascript/polyfill.js",
     "src/client/javascript/init.js",
     "src/client/javascript/utils/compability.js",
+    "src/client/javascript/utils/events.js",
     "src/client/javascript/utils/misc.js",
     "src/client/javascript/utils/dom.js",
     "src/client/javascript/utils/xhr.js",
@@ -93,6 +96,8 @@
     "src/client/javascript/windowmanager.js",
     "src/client/javascript/package-manager.js",
     "src/client/javascript/settings-manager.js",
+    "src/client/javascript/mount-manager.js",
+    "src/client/javascript/search-engine.js",
     "src/client/javascript/gui.js",
     "src/client/javascript/gui/_scheme.js",
     "src/client/javascript/gui/_elements.js",
@@ -106,6 +111,7 @@
     "src/client/javascript/gui/treeview.js",
     "src/client/javascript/gui/listview.js",
     "src/client/javascript/gui/iconview.js",
+    "src/client/javascript/gui/richtext.js",
     "src/client/javascript/gui/containers.js",
     "src/client/javascript/dialogs/alert.js",
     "src/client/javascript/dialogs/applicationchooser.js",
@@ -121,16 +127,26 @@
     "src/client/javascript/handler.js",
     "src/client/javascript/handlers/%HANDLER%/handler.js",
     "src/client/javascript/vfs.js",
+    "src/client/javascript/vfs/_fs.js",
     "src/client/javascript/vfs/_file.js",
     "src/client/javascript/vfs/internal.js",
+    "src/client/javascript/vfs/http.js",
+    "src/client/javascript/vfs/osjs.js",
+    "src/client/javascript/vfs/web.js",
     "src/client/javascript/vfs/webdav.js",
-    "src/client/javascript/vfs/mounts/apps.js",
-    "src/client/javascript/vfs/mounts/osjs.js",
-    "src/client/javascript/vfs/mounts/user.js",
+    "src/client/javascript/vfs/applications.js",
     "src/client/javascript/helpers/date.js",
+    "src/client/javascript/helpers/event-handler.js",
     "src/client/javascript/helpers/iframe-application.js",
     "src/client/javascript/helpers/default-application.js",
     "src/client/javascript/helpers/default-application-window.js",
     "src/client/javascript/helpers/settings-fragment.js"
+  ],
+
+  "stylesheets": [
+    "src/client/stylesheets/core.css",
+    "src/client/stylesheets/gui.css",
+    "src/client/stylesheets/arduino.css",
+    "dev:src/client/stylesheets/debug.css"
   ]
 }
