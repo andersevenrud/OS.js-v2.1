@@ -30,7 +30,7 @@
 (function(Application, Window, Utils, API, VFS, GUI) {
   'use strict';
 
-  var categories = ['theme', 'desktop', 'panel', 'user', 'fileview', 'search'];
+  var categories = ['theme', 'desktop', 'panel', 'user', 'fileview'];//, 'search'];
 
   /////////////////////////////////////////////////////////////////////////////
   // WINDOWS
@@ -163,7 +163,7 @@
     }
 
     var found;
-    var indexes = ['TabsTheme', 'TabsDesktop', 'TabsPanel', 'TabsUser', 'TabsFileView', 'TabsSearch'];
+    var indexes = ['TabsTheme', 'TabsDesktop', 'TabsPanel', 'TabsUser', 'TabsFileView']; //, 'TabsSearch'];
     if ( typeof idx === 'string' ) {
       idx = Math.max(0, categories.indexOf(idx));
     }
@@ -203,7 +203,7 @@
     this.initPanelTab(wm, scheme, init);
     this.initUserTab(wm, scheme, init);
     this.initFileViewTab(wm, scheme, init);
-    this.initSearchTab(wm, scheme, init);
+    //this.initSearchTab(wm, scheme, init);
   };
 
   /**
@@ -701,6 +701,7 @@
       }
     };
 
+    /*
     var tmpPaths = scheme.find(this, 'SearchPaths').get('entry', null, null, true).sort();
     var paths = [];
 
@@ -734,10 +735,11 @@
       files: scheme.find(this, 'SearchEnableFiles').get('value'),
       paths: paths
     };
+    */
 
     wm.applySettings(this.settings, false, function() {
       sm.instance('VFS').set(null, vfsSettings, false, false);
-      sm.instance('SearchEngine').set(null, searchSettings, true, false);
+      //sm.instance('SearchEngine').set(null, searchSettings, true, false);
     }, false);
   };
 
