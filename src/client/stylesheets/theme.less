@@ -33,6 +33,7 @@
 @base_foreground_color  : #FFF;//#242424;
 @base_shadow_unfocused  : 0px 0px 10px 1px rgba(0, 0, 0, .3);
 @base_shadow_focused    : 0px 0px 10px 1px rgba(0, 0, 0, .6);
+@base_font_size         : 12px;
 
 @menu_background_color : @base_background_color;
 @menu_foreground_color : @base_foreground_color;
@@ -141,6 +142,7 @@
   color : @gui_input_disabled_foreground_color;
 }
 .theme_text_input() {
+  cursor : pointer;
   padding : @gui_base_padding;
   background-color : @gui_input_background_color;
   border : 1px solid @gui_input_border_color;
@@ -167,6 +169,7 @@ body, input, button, textarea, label, select {
   font-family:Karla, Sans-serif;
   font-weight:normal;
   font-style:normal;
+  font-size : @base_font_size;
   color: @base_foreground_color;
 }
 
@@ -209,6 +212,7 @@ body[data-attention="true"]:after {
 
 corewm-panel {
   color : #ffffff; /* Window Manager manages this */
+  font-size : 0;
   padding : @gui_base_padding;
 }
 corewm-panel:before {
@@ -216,28 +220,44 @@ corewm-panel:before {
   box-shadow : 0px 0px 10px 1px rgba(34, 34, 34, .3);
   opacity : .85;
 }
-  corewm-panel li.Button {
-    margin-top : -1px;
+
+corewm-panel-container {
+  padding : (@gui_base_padding * 2);
+}
+corewm-panel[data-orientation="horizontal"] corewm-panel-container {
+  width : calc(~"100% - "@gui_base_padding * 2);
+}
+corewm-panel[data-orientation="vertical"] corewm-panel-container {
+  height : calc(~"100% - "@gui_base_padding * 2);
+}
+
+  corewm-panel corewm-panel-item .corewm-panel-buttons > li {
     cursor : pointer;
-    background : transparent !important;
+    font-size : @base_font_size;
+  }
+  corewm-panel[data-orientation="horizontal"] corewm-panel-item .corewm-panel-buttons > li {
+    margin-right : @gui_base_padding;
+    margin-left : @gui_base_padding;
+  }
+  corewm-panel[data-orientation="vertical"] corewm-panel-item .corewm-panel-buttons > li {
+    margin-top : @gui_base_padding;
+    margin-bottom : @gui_base_padding;
   }
 
 corewm-panel .PanelItemClock {
   font-family : Monospace, Courier New;
   font-weight : normal;
   text-align : right;
-  line-height : 26px;
 }
 
-corewm-panel .PanelItemWindowList li.Button {
+corewm-panel .PanelItemWindowList li {
   opacity : .50;
 }
-corewm-panel .PanelItemWindowList li.Button.Focused {
+corewm-panel .PanelItemWindowList li.Focused {
   opacity : 1;
 }
-
-corewm-panel-container {
-  padding : @gui_base_padding;
+corewm-panel .PanelItemWindowList li img {
+  margin-right : @gui_base_padding;
 }
 
 /* Notifications */
@@ -248,40 +268,87 @@ application-splash {
   opacity : .85;
   cursor : pointer;
 }
+
+.custom-notification {
+  color : #fff; /* Window Manager manages this */
+}
+
+corewm-notifications {
+  top : 10px;
+  right : 10px;
+}
+
 corewm-notification {
   color : #fff; /* Window Manager manages this */
   cursor : pointer;
-}
-corewm-notification:before {
-  background : #101010; /* Window Manager manages this */
-  box-shadow : 0px 0px 10px 1px rgba(34, 34, 34, .3);
-  opacity : .85;
-}
-corewm-notification .Title {
-  font-weight : bold;
+  padding : (@gui_base_padding * 2);
+  margin-bottom : @gui_base_padding;
 }
 
-corewm-notification .Title,
-corewm-notification .Message {
-  line-height : 16px;
-}
+  .custom-notification:before,
+  corewm-notification:before {
+    content : '';
+    background : #101010; /* Window Manager manages this */
+    box-shadow : 0px 0px 10px 1px rgba(34, 34, 34, .3);
+    opacity : .85;
+  }
 
-/* Desktop drop wallpaper effect */
-#Background.Blinking {
-  background : #fff;
-}
+  .custom-notification .Title,
+  corewm-notification .Title {
+    font-weight : bold;
+  }
 
-/* Window Switcher */
-corewm-window-switcher {
-  box-shadow : @base_shadow_focused;
-  background : @base_background_color;
+  .custom-notification .Title,
+  .custom-notification .Message,
+  corewm-notification .Title,
+  corewm-notification .Message {
+    line-height : 16px;
+  }
+
+  /* Desktop drop wallpaper effect */
+  #Background.Blinking {
+    background : #fff;
+  }
+
+  /* Window Switcher */
+  corewm-window-switcher {
+    box-shadow : @base_shadow_focused;
+    background : @base_background_color;
+  }
+  corewm-window-switcher > div.Active {
+    background : @gui_selected_background_color;
+  }
+  corewm-window-switcher > div.Active > span {
+    color : @gui_selected_foreground_color;
+  }
+
+corewm-search {
+  padding : @gui_base_padding;
+  min-width : 200px;
+  max-width : 40%;
+  right : 10px;
+  top : 10px;
 }
-corewm-window-switcher > div.Active {
-  background : @gui_selected_background_color;
-}
-corewm-window-switcher > div.Active > span {
-  color : @gui_selected_foreground_color;
-}
+  corewm-search > div {
+    margin-top : @gui_base_padding;
+  }
+  corewm-search > ul {
+    margin-top : @gui_base_padding;
+    cursor : pointer;
+  }
+    corewm-search > ul > li {
+      padding : @gui_base_padding;
+      padding-left : (16px + @gui_base_padding * 2);
+    }
+      corewm-search > ul > li > img {
+        top : @gui_base_padding;
+        left : @gui_base_padding;
+      }
+    corewm-search > ul > .active,
+    corewm-search > ul > li:hover {
+      background : #fff;
+      color : #000;
+    }
 
 /**
  * ===========================================================================
@@ -306,7 +373,7 @@ application-window[data-focused="true"] {
 application-window[data-focused="true"]:before {
   box-shadow : @base_shadow_focused;
 }
-application-window[data-dnd-state="true"]:after {
+  application-window[data-dnd-state="true"]:after {
   top : -@window_top_height;
 }
 application-window-top {
@@ -328,7 +395,7 @@ application-window-title {
   font-weight : bold;
   color : @base_foreground_color;
   opacity : .5;
-  left : calc(20px + @gui_base_padding);
+  left : (20px + @gui_base_padding);
   line-height : @window_top_height;
   text-align : center;
 }
@@ -412,7 +479,7 @@ application-window-warning {
     opacity : .9;
   }
 application-window-resize {
-  top : calc(-@window_top_height - @window_resize_offset);
+  top : (-@window_top_height - @window_resize_offset);
   left : -@window_resize_offset;
   right : -@window_resize_offset;
   bottom : -@window_resize_offset;
@@ -561,7 +628,7 @@ gui-toolbar[data-orientation="vertical"] {
 
 /* Expander */
 gui-expander {
-  font-size : 12px;
+  font-size : @base_font_size;
 }
   gui-expander-label {
     cursor : pointer;
@@ -700,7 +767,7 @@ gui-checkbox {
 
   gui-checkbox input:checked:after {
     content: "\2713";
-    font-size: 12px;
+    font-size : @base_font_size;
   }
 
   gui-radio[data-disabled="true"] label,
@@ -1018,9 +1085,11 @@ gui-menu {
     padding : @gui_base_padding;
   }
 
+  gui-menu > gui-menu-entry.gui-hover,
   gui-menu > gui-menu-entry:hover {
     background-color: @gui_selected_background_color;
   }
+  gui-menu > gui-menu-entry.gui-hover > label,
   gui-menu > gui-menu-entry:hover > label {
     color: @gui_selected_foreground_color;
   }

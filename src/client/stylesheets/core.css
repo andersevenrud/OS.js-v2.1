@@ -256,7 +256,7 @@ body[data-attention="true"]:after {
 .application-window-button-entry,
 application-window,
 application-window-top,
-application-application-window-content,
+application-window-content,
 application-window-icon,
 application-window-title,
 application-window-loading,
@@ -300,15 +300,6 @@ application-window-top {
        -o-flex-wrap: nowrap;
           flex-wrap: nowrap;
 }
-  application-window-top,
-  application-window-top > * {
-    -webkit-user-select : none;
-       -moz-user-select : none;
-        -ms-user-select : none;
-         -o-user-select : none;
-            user-select : none;
-  }
-
   application-window-top > * {
     min-width : 16px;
     min-height : 16px;
@@ -362,7 +353,18 @@ application-window-title {
   text-align : center;
   display : inline-block;
   position : relative;
+  display : none;
 }
+
+  application-window[data-allow-maximize="true"] application-window-button-maximize {
+    display : block;
+  }
+  application-window[data-allow-minimize="true"] application-window-button-minimize {
+    display : block;
+  }
+  application-window[data-allow-close="true"] application-window-button-close {
+    display : block;
+  }
 
 application-window-content {
   position : absolute;
@@ -381,11 +383,6 @@ application-window-resize {
   right : 0;
   bottom : 0;
   z-index : -1;
-  -webkit-user-select : none;
-     -moz-user-select : none;
-      -ms-user-select : none;
-       -o-user-select : none;
-          user-select : none;
 }
 application-window[data-allow-resize="false"] > application-window-resize {
   display : none;
@@ -470,6 +467,9 @@ application-window.DialogWindow gui-label label {
 }
 application-window.DialogWindow gui-button-bar gui-button {
   min-width : 80px;
+}
+application-window.DialogWindow gui-label[data-id="Message"] span {
+  font-weight : bold;
 }
 
 /**

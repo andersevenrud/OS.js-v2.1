@@ -1,4 +1,3 @@
-@import 'src/client/stylesheets/theme.less';
 @import 'src/client/themes/styles/material/materialColors.less';
 
 @base_background_color  : @clr-arduino-700;
@@ -301,7 +300,6 @@ gui-button {
     outline: 0 !important;
     text-decoration: none !important;
     cursor: pointer;
-    user-select: none;
     transition: background 0.3s;
 
     img{
@@ -342,7 +340,7 @@ corewm-panel{
     background: @clr-arduino-700 !important;
     background-color: #00979C !important;
   }
-  .PanelItemWindowList .Button {
+  .PanelItemWindowList li {
     opacity: 1 !important;
 
     span {

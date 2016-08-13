@@ -31,9 +31,6 @@
 (function(Application, Window, Utils, VFS, API, GUI) {
   'use strict';
 
-  window.OSjs       = window.OSjs       || {};
-  OSjs.Helpers      = OSjs.Helpers      || {};
-
   /////////////////////////////////////////////////////////////////////////////
   // Default Application Window Helper
   /////////////////////////////////////////////////////////////////////////////
@@ -43,10 +40,12 @@
    *
    * Use in combination with 'DefaultApplication'
    *
-   * @see OSjs.Helpers.DefaultApplication
-   * @api OSjs.Helpers.DefaultApplicationWindow
+   * @summary Helper for making Applications with file interaction.
    *
-   * @class
+   * @constructor
+   * @memberof OSjs.Helpers
+   * @see OSjs.Helpers.DefaultApplication
+   * @see OSjs.Core.Window
    */
   function DefaultApplicationWindow(name, app, args, scheme, file) {
     Window.apply(this, arguments);
@@ -85,15 +84,27 @@
     var app = this._app;
 
     var menuMap = {
-      MenuNew:    function() { app.newDialog(self.currentFile, self); },
-      MenuSave:   function() { app.saveDialog(self.currentFile, self); },
-      MenuSaveAs: function() { app.saveDialog(self.currentFile, self, true); },
-      MenuOpen:   function() { app.openDialog(self.currentFile, self); },
-      MenuClose:  function() { self._close(); }
+      MenuNew:    function() {
+        app.newDialog(self.currentFile, self);
+      },
+      MenuSave:   function() {
+        app.saveDialog(self.currentFile, self);
+      },
+      MenuSaveAs: function() {
+        app.saveDialog(self.currentFile, self, true);
+      },
+      MenuOpen:   function() {
+        app.openDialog(self.currentFile, self);
+      },
+      MenuClose:  function() {
+        self._close();
+      }
     };
 
     this._scheme.find(this, 'SubmenuFile').on('select', function(ev) {
-      if ( menuMap[ev.detail.id] ) { menuMap[ev.detail.id](); }
+      if ( menuMap[ev.detail.id] ) {
+        menuMap[ev.detail.id]();
+      }
     });
 
     this._scheme.find(this, 'MenuSave').set('disabled', true);
@@ -112,7 +123,9 @@
    * On Drag-And-Drop Event
    */
   DefaultApplicationWindow.prototype._onDndEvent = function(ev, type, item, args) {
-    if ( !Window.prototype._onDndEvent.apply(this, arguments) ) { return; }
+    if ( !Window.prototype._onDndEvent.apply(this, arguments) ) {
+      return;
+    }
 
     if ( type === 'itemDrop' && item ) {
       var data = item.data;
@@ -149,11 +162,10 @@
   /**
    * Checks if current file has changed
    *
-   * @param   Function      cb        Callback => fn(discard_changes)
+   * @function  checkHasChanged
+   * @memberof OSjs.Helpers.DefaultApplicationWindow#
    *
-   * @return  void
-   *
-   * @method  DefaultApplicationWindow::checkHasChanged()
+   * @param   {Function}      cb        Callback => fn(discard_changes)
    */
   DefaultApplicationWindow.prototype.checkHasChanged = function(cb) {
     var self = this;
@@ -177,14 +189,13 @@
   /**
    * Show opened/created file
    *
-   * @param   OSjs.VFS.File       file        File
-   * @param   Mixed               content     File contents
-   *
    * YOU SHOULD EXTEND THIS METHOD IN YOUR WINDOW TO ACTUALLY DISPLAY CONTENT
    *
-   * @return  void
+   * @function  showFile
+   * @memberof OSjs.Helpers.DefaultApplicationWindow#
    *
-   * @method  DefaultApplicationWindow::showFile()
+   * @param   {OSjs.VFS.File}       file        File
+   * @param   {Mixed}               content     File contents
    */
   DefaultApplicationWindow.prototype.showFile = function(file, content) {
     this.updateFile(file);
@@ -193,11 +204,10 @@
   /**
    * Updates current view for given File
    *
-   * @param   OSjs.VFS.File       file        File
+   * @function updateFile
+   * @memberof OSjs.Helpers.DefaultApplicationWindow#
    *
-   * @return  void
-   *
-   * @method  DefaultApplicationWindow::updateFile()
+   * @param   {OSjs.VFS.File}       file        File
    */
   DefaultApplicationWindow.prototype.updateFile = function(file) {
     this.currentFile = file || null;
@@ -219,9 +229,10 @@
    *
    * YOU SHOULD IMPLEMENT THIS METHOD IN YOUR WINDOW TO RETURN FILE CONTENTS
    *
-   * @return  Mixed File contents
+   * @function getFileData
+   * @memberof OSjs.Helpers.DefaultApplicationWindow#
    *
-   * @method  DefaultApplicationWindow::getFileData()
+   * @return  {Mixed} File contents
    */
   DefaultApplicationWindow.prototype.getFileData = function() {
     return null;

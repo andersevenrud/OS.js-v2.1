@@ -33,16 +33,18 @@
   /**
    * An 'Confirm' dialog
    *
-   * @param   args      Object        An object with arguments
-   * @param   callback  Function      Callback when done => fn(ev, button, result)
+   * @example
    *
-   * @option    args    title       String      Dialog title
-   * @option    args    message     String      Dialog message
-   * @option    args    buttons     Array       Dialog buttons (default=yes,no,cancel)
+   * OSjs.API.createDialog('Confirm', {}, fn);
    *
-   * @extends DialogWindow
-   * @class ConfirmDialog
-   * @api OSjs.Dialogs.Confirm
+   * @param  {Object}          args              An object with arguments
+   * @param  {String}          args.title        Dialog title
+   * @param  {String}          args.message      Dialog message
+   * @param  {Array}           args.buttons      Dialog buttons (default=yes,no,cancel)
+   * @param  {CallbackDialog}  callback          Callback when done
+   *
+   * @constructor Confirm
+   * @memberof OSjs.Dialogs
    */
   function ConfirmDialog(args, callback) {
     args = Utils.argumentDefaults(args, {
@@ -64,7 +66,8 @@
     var self = this;
     var root = DialogWindow.prototype.init.apply(this, arguments);
 
-    this.scheme.find(this, 'Message').set('value', this.args.message);
+    var msg = DialogWindow.parseMessage(this.args.message);
+    this.scheme.find(this, 'Message').empty().append(msg);
 
     var buttonMap = {
       yes: 'ButtonYes',
@@ -90,7 +93,6 @@
   // EXPORTS
   /////////////////////////////////////////////////////////////////////////////
 
-  OSjs.Dialogs = OSjs.Dialogs || {};
   OSjs.Dialogs.Confirm = Object.seal(ConfirmDialog);
 
 })(OSjs.API, OSjs.Utils, OSjs.Core.DialogWindow);

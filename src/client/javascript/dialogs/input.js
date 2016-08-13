@@ -33,17 +33,19 @@
   /**
    * An 'Input' dialog
    *
-   * @param   args      Object        An object with arguments
-   * @param   callback  Function      Callback when done => fn(ev, button, result)
+   * @example
    *
-   * @option    args    title       String      Dialog title
-   * @option    args    message     String      Dialog message
-   * @option    args    value       String      (Optional) Input value
-   * @option    args    placeholder String      (Optional) Input placeholder
+   * OSjs.API.createDialog('Input', {}, fn);
    *
-   * @extends DialogWindow
-   * @class InputDialog
-   * @api OSjs.Dialogs.Input
+   * @param  {Object}          args                An object with arguments
+   * @param  {String}          args.title          Dialog title
+   * @param  {String}          args.message        Dialog message
+   * @param  {String}          [args.value]        Input value
+   * @param  {String}          [args.placeholder]  Input placeholder
+   * @param  {CallbackDialog}  callback            Callback when done
+   *
+   * @constructor Input
+   * @memberof OSjs.Dialogs
    */
   function InputDialog(args, callback) {
     args = Utils.argumentDefaults(args, {});
@@ -62,8 +64,10 @@
   InputDialog.prototype.init = function() {
     var self = this;
     var root = DialogWindow.prototype.init.apply(this, arguments);
+
     if ( this.args.message ) {
-      this.scheme.find(this, 'Message').set('value', this.args.message, true);
+      var msg = DialogWindow.parseMessage(this.args.message);
+      this.scheme.find(this, 'Message').empty().append(msg);
     }
 
     var input = this.scheme.find(this, 'Input');
@@ -100,7 +104,6 @@
   // EXPORTS
   /////////////////////////////////////////////////////////////////////////////
 
-  OSjs.Dialogs = OSjs.Dialogs || {};
   OSjs.Dialogs.Input = Object.seal(InputDialog);
 
 })(OSjs.API, OSjs.Utils, OSjs.Core.DialogWindow);

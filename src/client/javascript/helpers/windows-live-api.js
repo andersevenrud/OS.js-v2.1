@@ -31,10 +31,10 @@
 (function(Utils, API) {
   'use strict';
 
-  var OSjs = window.OSjs = window.OSjs || {};
-  //var WL   = window.WL   = window.WL || {};
-
-  OSjs.Helpers = OSjs.Helpers || {};
+  /**
+   * @namespace OSjs.Helpers.WindowsLiveAPI
+   * @memberof OSjs.Helpers
+   */
 
   var redirectURI = window.location.href.replace(/\/$/, '') + '/vendor/wlOauthReceiver.html';
 
@@ -47,14 +47,19 @@
   /**
    * The WindowsLiveAPI wrapper class
    *
+   * <pre><b>
    * This is a private class and can only be aquired through
    * OSjs.Helpers.WindowsLiveAPI.createInsatance()
    *
    * Generally you want to create an instance of this helper
    * and when successfully created use `window.WL`.
+   * </b></pre>
    *
-   * @see OSjs.Helpers.WindowsLiveAPI.createInsatance()
-   * @api OSjs.Helpers.WindowsLiveAPI.WindowsLiveAPI
+   * @summary Helper for communicating with Windows Live API.
+   *
+   * @constructor Class
+   * @memberof OSjs.Helpers.WindowsLiveAPI
+   * @see OSjs.Helpers.WindowsLiveAPI.createInsatance
    *
    * @link http://msdn.microsoft.com/en-us/library/hh826547.aspx
    * @link http://msdn.microsoft.com/en-us/library/hh826538.aspx
@@ -63,9 +68,6 @@
    * @link http://msdn.microsoft.com/en-us/library/dn631839.aspx
    * @link http://msdn.microsoft.com/en-us/library/hh243643.aspx
    * @link https://account.live.com/developers/applications/index
-   *
-   * @private
-   * @class
    */
   function WindowsLiveAPI(clientId) {
     this.hasSession = false;
@@ -199,11 +201,10 @@
   /**
    * Sign out of WindowsLiveAPI
    *
-   * @param   Function    cb      Callback => fn(error, result)
+   * @function logout
+   * @memberof OSjs.Helpers.WindowsLiveAPI.Class#
    *
-   * @return  void
-   *
-   * @method  WindowsLiveAPI::logout()
+   * @param   {Function}    cb      Callback => fn(error, result)
    */
   WindowsLiveAPI.prototype.logout = function(callback) {
     callback = callback || function() {};
@@ -225,9 +226,7 @@
 
     WL.logout();
 
-    if ( OSjs.VFS.Modules.OneDrive ) {
-      OSjs.VFS.Modules.OneDrive.unmount();
-    }
+    OSjs.Core.getMountManager().remove('OneDrive');
   };
 
   /**
@@ -314,9 +313,10 @@
   /**
    * Gets the currently running instance
    *
-   * @api OSjs.Helpers.WindowsLiveAPI.getInstance()
+   * @function getInstance
+   * @memberof OSjs.Helpers.WindowsLiveAPI
    *
-   * @return  WindowsLiveAPI       Can also be null
+   * @return  {OSjs.Helpers.WindowsLiveAPI.Class}       Can also be null
    */
   OSjs.Helpers.WindowsLiveAPI.getInstance = function() {
     return SingletonInstance;
@@ -325,14 +325,12 @@
   /**
    * Create an instance of WindowsLiveAPI
    *
-   * @param   Object    args      Arguments
-   * @param   Function  callback  Callback function => fn(error, instance)
+   * @function createInstance
+   * @memberof OSjs.Helpers.WindowsLiveAPI
    *
-   * @option  args    Array     scope     What scope to load
-   *
-   * @api OSjs.Helpers.WindowsLiveAPI.createInstance()
-   *
-   * @return  void
+   * @param   {Object}    args           Arguments
+   * @param   {Array}     args.load      What functions/apis to load
+   * @param   {Function}  callback       Callback function => fn(error, instance)
    */
   OSjs.Helpers.WindowsLiveAPI.createInstance = function(args, callback) {
     args = args || {};

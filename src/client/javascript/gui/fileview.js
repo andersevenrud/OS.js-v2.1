@@ -57,7 +57,7 @@
 
   function getFileSize(iter) {
     var filesize = '';
-    if ( iter.type !== 'dir' && iter.size ) {
+    if ( iter.type !== 'dir' && iter.size >= 0 ) {
       filesize = Utils.humanFileSize(iter.size);
     }
     return filesize;
@@ -114,7 +114,7 @@
       },
       mime: {
         label: 'LBL_MIME',
-        basis: '100px',
+        size: '100px',
         icon: function() {
           return null;
         },
@@ -124,7 +124,7 @@
       },
       mtime: {
         label: 'LBL_MODIFIED',
-        basis: '160px',
+        size: '160px',
         icon: function() {
           return null;
         },
@@ -134,7 +134,7 @@
       },
       ctime: {
         label: 'LBL_CREATED',
-        basis: '160px',
+        size: '160px',
         icon: function() {
           return null;
         },
@@ -144,7 +144,7 @@
       },
       size: {
         label: 'LBL_SIZE',
-        basis: '120px',
+        size: '120px',
         icon: function() {
           return null;
         },
@@ -175,14 +175,9 @@
           textalign: idx === 0 ? 'left' : 'right'
         });
       } else {
-        var grow = idx === 0 ? 1 : 0;
-        var shrink = grow;
-
         columns.push({
           label: API._(map.label),
-          basis: map.basis || 'auto',
-          grow: grow,
-          shrink: shrink,
+          size: map.size || '',
           resizable: idx > 0,
           textalign: idx === 0 ? 'left' : 'right'
         });
@@ -360,18 +355,21 @@
    *
    * For more properties and events etc, see 'dataview'
    *
-   * @property  multiple    boolean       If multiple elements are selectable
-   * @property  type        String        Child type
-   * @property  filter      Array         MIME Filters
-   * @property  dotfiles    boolean       Show dotfiles (default=true)
-   * @property  extensions  boolean       Show file extensions (default=true)
-   * @action    chdir                     Change directory => fn(args)  (args = {path: '', done: function() })
+   * <pre><code>
+   *   property  multiple    boolean       If multiple elements are selectable
+   *   property  type        String        Child type
+   *   property  filter      Array         MIME Filters
+   *   property  dotfiles    boolean       Show dotfiles (default=true)
+   *   property  extensions  boolean       Show file extensions (default=true)
+   *   action    chdir                     Change directory => fn(args)  (args = {path: '', done: function() })
+   * </code></pre>
    *
-   * @api OSjs.GUI.Elements.gui-file-view
+   * @constructs OSjs.GUI.Element
+   * @memberof OSjs.GUI.Elements
+   * @var gui-file-view
    * @see OSjs.GUI.Elements.gui-list-view
    * @see OSjs.GUI.Elements.gui-tree-view
    * @see OSjs.GUI.Elements.gui-icon-view
-   * @class
    */
   GUI.Elements['gui-file-view'] = {
     bind: function(el, evName, callback, params) {
@@ -495,15 +493,20 @@
           var t = new GUI.ElementDataView(target);
           var dir = args.path || OSjs.API.getDefaultPath();
 
-          readdir(el, dir, function(error, result, summary) {
-            if ( error ) {
-              API.error(API._('ERR_VFSMODULE_XHR_ERROR'), API._('ERR_VFSMODULE_SCANDIR_FMT', dir), error);
-            } else {
-              t.clear();
-              t.add(result);
-            }
-            args.done(error, summary);
-          });
+          clearTimeout(el._readdirTimeout);
+          el._readdirTimeout = setTimeout(function() {
+            readdir(el, dir, function(error, result, summary) {
+              if ( error ) {
+                API.error(API._('ERR_VFSMODULE_XHR_ERROR'), API._('ERR_VFSMODULE_SCANDIR_FMT', dir), error);
+              } else {
+                t.clear();
+                t.add(result);
+              }
+              args.done(error, summary);
+            });
+
+            el._readdirTimeout = clearTimeout(el._readdirTimeout);
+          }, 50); // Prevent exessive calls
           return;
         }
 

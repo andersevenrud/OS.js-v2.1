@@ -34,24 +34,22 @@
   // ITEM
   /////////////////////////////////////////////////////////////////////////////
 
-  var NotificationAreaItem = function(name, opts) {
+  function NotificationAreaItem(name, opts) {
     opts = opts || {};
 
     this.name           = name;
     this.opts           = opts;
-    this.$container     = document.createElement('div');
+    this.$container     = document.createElement('li');
     this.$image         = (opts.image || opts.icon) ? document.createElement('img') : null;
     this.onCreated      = opts.onCreated     || function() {};
     this.onInited       = opts.onInited      || function() {};
     this.onDestroy      = opts.onDestroy     || function() {};
     this.onClick        = opts.onClick       || function() {};
     this.onContextMenu  = opts.onContextMenu || function() {};
-    this.evClick        = null;
-    this.evMenu         = null;
 
     this._build(name);
     this.onCreated.call(this);
-  };
+  }
 
   NotificationAreaItem.prototype._build = function(name) {
     var self = this;
@@ -68,7 +66,12 @@
       this.$container.title = this.opts.tooltip;
     }
 
-    this.evClick = Utils.$bind(this.$container, 'click', function(ev) {
+    Utils.$bind(this.$container, 'mousedown', function(ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+    });
+
+    Utils.$bind(this.$container, 'click', function(ev) {
       ev.stopPropagation();
       ev.preventDefault();
       OSjs.API.blurMenu();
@@ -76,7 +79,7 @@
       return false;
     });
 
-    this.evMenu = Utils.$bind(this.$container, 'contextmenu', function(ev) {
+    Utils.$bind(this.$container, 'contextmenu', function(ev) {
       ev.stopPropagation();
       ev.preventDefault();
       OSjs.API.blurMenu();
@@ -90,7 +93,9 @@
       this.$container.appendChild(this.$image);
     }
 
-    this.$container.appendChild(document.createElement('div'));
+    var inner = document.createElement('div');
+    inner.appendChild(document.createElement('div'));
+    this.$container.appendChild(inner);
   };
 
   NotificationAreaItem.prototype.init = function(root) {
@@ -123,11 +128,9 @@
   };
 
   NotificationAreaItem.prototype.destroy = function() {
-    if ( this.evClick ) {
-      this.evClick = Utils.$unbind(this.evClick);
-    }
-    if ( this.evMenu ) {
-      this.evMenu = Utils.$unbind(this.evMenu);
+    if ( this.$container ) {
+      Utils.$unbind(this.$container, 'click');
+      Utils.$unbind(this.$container, 'contextmenu');
     }
     this.onDestroy.call(this);
 
@@ -141,22 +144,25 @@
   /**
    * PanelItem: NotificationArea
    */
-  var PanelItemNotificationArea = function() {
-    PanelItem.apply(this, ['PanelItemNotificationArea PanelItemFill PanelItemRight']);
+  function PanelItemNotificationArea() {
+    PanelItem.apply(this, ['PanelItemNotificationArea corewm-panel-right']);
     this.notifications = {};
-  };
+  }
 
   PanelItemNotificationArea.prototype = Object.create(PanelItem.prototype);
+  PanelItemNotificationArea.constructor = PanelItem;
+
   PanelItemNotificationArea.Name = 'NotificationArea'; // Static name
   PanelItemNotificationArea.Description = 'View notifications'; // Static description
   PanelItemNotificationArea.Icon = 'apps/gnome-panel-notification-area.png'; // Static icon
 
   PanelItemNotificationArea.prototype.init = function() {
+    var self = this;
+
     var root = PanelItem.prototype.init.apply(this, arguments);
     root.setAttribute('role', 'toolbar');
 
     var fix = Object.keys(_restartFix);
-    var self = this;
     if ( fix.length ) {
       fix.forEach(function(k) {
         self.createNotification(k, _restartFix[k]);
@@ -170,7 +176,7 @@
     if ( this._$root ) {
       if ( !this.notifications[name] ) {
         var item = new NotificationAreaItem(name, opts);
-        item.init(this._$root);
+        item.init(this._$container);
         this.notifications[name] = item;
         _restartFix[name] = opts;
 

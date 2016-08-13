@@ -33,16 +33,18 @@
   /**
    * An 'FileUpload' dialog
    *
-   * @param   args      Object        An object with arguments
-   * @param   callback  Function      Callback when done => fn(ev, button, result)
+   * @example
    *
-   * @option    args    title       String      Dialog title
-   * @option    args    dest        String      Upload destination path
-   * @option    args    file        Mixed       (Optional) Upload this file
+   * OSjs.API.createDialog('FileUpload', {}, fn);
    *
-   * @extends DialogWindow
-   * @class FileUploadDialog
-   * @api OSjs.Dialogs.FileUpload
+   * @param  {Object}          args              An object with arguments
+   * @param  {String}          args.title        Dialog title
+   * @param  {String}          args.dest         VFS destination
+   * @param  {OSjs.VFS.File}   [args.file]       File to upload
+   * @param  {CallbackDialog}  callback          Callback when done
+   *
+   * @constructor FileUpload
+   * @memberof OSjs.Dialogs
    */
   function FileUploadDialog(args, callback) {
     args = Utils.argumentDefaults(args, {
@@ -144,7 +146,9 @@
       });
 
       setTimeout(function() {
-        if ( progressDialog ) { progressDialog._focus(); }
+        if ( progressDialog ) {
+          progressDialog._focus();
+        }
       }, 100);
     }
   };
@@ -158,7 +162,6 @@
   // EXPORTS
   /////////////////////////////////////////////////////////////////////////////
 
-  OSjs.Dialogs = OSjs.Dialogs || {};
   OSjs.Dialogs.FileUpload = Object.seal(FileUploadDialog);
 
 })(OSjs.API, OSjs.VFS, OSjs.Utils, OSjs.Core.DialogWindow);

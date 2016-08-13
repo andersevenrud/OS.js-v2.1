@@ -34,12 +34,21 @@
   /**
    * Settings Manager Class
    *
-   * For maintaining settings
+   * @summary Class for maintaining settings
    *
-   * You can only get an instance with `Core.getSettingsManager()`
+   * <pre><b>
+   * YOU CAN ONLY GET AN INSTANCE WITH `Core.getSettingsManager()`
+   * </b></pre>
    *
-   * @api     OSjs.Core.SettingsManager
-   * @class
+   * @example
+   * OSjs.Core.getSettingsManager()
+   *
+   * @summary Used for managing Settings across all applications and modules.
+   *
+   * @constructor
+   * @memberof OSjs.Core
+   * @see OSjs.Helpers.EventHandler
+   * @see OSjs.Core.getSettingsManager
    */
   var SettingsManager = {
     storage: {},
@@ -51,11 +60,10 @@
    * Initialize SettingsManager.
    * This is run when a user logs in. It will give saved data here
    *
-   * @param Object    settings      Entire settings tree
+   * @function init
+   * @memberof OSjs.Core.SettingsManager#
    *
-   * @return  void
-   *
-   * @method  SettingsManager::init()
+   * @param {Object}    settings      Entire settings tree
    */
   SettingsManager.init = function(settings) {
     this.storage = settings || {};
@@ -64,12 +72,13 @@
   /**
    * Gets either the full tree or tree entry by key
    *
-   * @param  String     pool      Name of settings pool
-   * @param  String     key       (Optional) Key entry of tree
+   * @function get
+   * @memberof OSjs.Core.SettingsManager#
    *
-   * @return  Mixed
+   * @param  {String}     pool      Name of settings pool
+   * @param  {String}     [key]     Key entry of tree
    *
-   * @method  SettingsManager::get()
+   * @return  {Mixed}
    */
   SettingsManager.get = function(pool, key) {
     try {
@@ -88,16 +97,18 @@
   /**
    * Sets either full tree or a tree entry by key
    *
-   * @param  String     pool      Name of settings pool
-   * @param  String     key       (Optional) Key entry of tree
-   * @param  Mixed      value     The value (or entire tree if no key given)
-   * @param  Mixed      save      (Optional) boolean or callback function for saving
+   * @function set
+   * @memberof OSjs.Core.SettingsManager#
    *
-   * @return  boolean
+   * @param  {String}     pool                  Name of settings pool
+   * @param  {String}     [key]                 Key entry of tree
+   * @param  {Mixed}      value                 The value (or entire tree if no key given)
+   * @param  {Mixed}      [save]                boolean or callback function for saving
+   * @param  {Boolean}    [triggerWatch=true]   trigger change event for watchers
    *
-   * @method  SettingsManager::set()
+   * @return  {Boolean}
    */
-  SettingsManager.set = function(pool, key, value, save) {
+  SettingsManager.set = function(pool, key, value, save, triggerWatch) {
     try {
       if ( key ) {
         if ( typeof this.storage[pool] === 'undefined' ) {
@@ -119,7 +130,9 @@
       this.save(pool, save);
     }
 
-    this.changed(pool);
+    if ( typeof triggerWatch === 'undefined' || triggerWatch === true ) {
+      this.changed(pool);
+    }
 
     return true;
   };
@@ -127,12 +140,11 @@
   /**
    * Saves the storage to a location
    *
-   * @param  String     pool      Name of settings pool
-   * @param  Function   callback  Callback
+   * @function save
+   * @memberof OSjs.Core.SettingsManager#
    *
-   * @return  void
-   *
-   * @method  SettingsManager::save()
+   * @param  {String}     pool      Name of settings pool
+   * @param  {Function}   callback  Callback
    */
   SettingsManager.save = function(pool, callback) {
     if ( typeof callback !== 'function' ) {
@@ -146,12 +158,11 @@
   /**
    * Sets the defaults for a specific pool
    *
-   * @param  String     pool      Name of settings pool
-   * @param  Object     default   (Optional) Default settings tree
+   * @function defaults
+   * @memberof OSjs.Core.SettingsManager#
    *
-   * @return  void
-   *
-   * @method SettingsManager::defaults()
+   * @param  {String}     pool      Name of settings pool
+   * @param  {Object}     [default] Default settings tree
    */
   SettingsManager.defaults = function(pool, defaults) {
     this.defaults[pool] = defaults;
@@ -160,12 +171,13 @@
   /**
    * Creates a new proxy instance
    *
-   * @param  String     pool      Name of settings pool
-   * @param  Object     default   (Optional) Default settings tree
+   * @function instance
+   * @memberof OSjs.Core.SettingsManager#
    *
-   * @return Object
+   * @param  {String}     pool      Name of settings pool
+   * @param  {Object}     [default] Default settings tree
    *
-   * @method SettingsManager::instance()
+   * @return {Object}
    */
   SettingsManager.instance = function(pool, defaults) {
     if ( !this.storage[pool] || (this.storage[pool] instanceof Array) ) {
@@ -184,11 +196,10 @@
   /**
    * Destroy a watcher
    *
-   * @param  integer    index     The index from watch()
+   * @function unwatch
+   * @memberof OSjs.Core.SettingsManager#
    *
-   * @return  void
-   *
-   * @method SettingsManager::unwatch()
+   * @param  {Number}    index     The index from watch()
    */
   SettingsManager.unwatch = function(index) {
     if ( typeof this.watches[index] !== 'undefined' ) {
@@ -199,12 +210,13 @@
   /**
    * Receive events when a pool changes.
    *
-   * @param  String     pool      Name of settings pool
-   * @param  Function   callback  Callback
+   * @function watch
+   * @memberof OSjs.Core.SettingsManager#
    *
-   * @return Mixed                false on error, index for unwatch() otherwise
+   * @param  {String}     pool      Name of settings pool
+   * @param  {Function}   callback  Callback
    *
-   * @method SettingsManager::watch()
+   * @return {Mixed}                false on error, index for unwatch() otherwise
    */
   SettingsManager.watch = function(pool, callback) {
     if ( !this.storage[pool] ) {
@@ -222,11 +234,12 @@
   /**
    * Notify the SettingsManager that somewhere in a pool's tree it has changed.
    *
-   * @param  String     pool      Name of settings pool that changed
+   * @function changed
+   * @memberof OSjs.Core.SettingsManager#
    *
-   * @return SettingsManager      this
+   * @param  {String}     pool      Name of settings pool that changed
    *
-   * @method SettingsManager::changed()
+   * @return {OSjs.Core.SettingsManager}      this
    */
   SettingsManager.changed = function(pool) {
     var self = this;
@@ -242,12 +255,13 @@
   /**
    * Clears a pool
    *
-   * @param  String     pool      Name of settings pool
-   * @param  Mixed      save      (Optional) boolean or callback function for saving (default = true)
+   * @function clear
+   * @memberof OSjs.Core.SettingsManager#
    *
-   * @return SettingsManager      this
+   * @param  {String}     pool        Name of settings pool
+   * @param  {Mixed}      [save=true] Boolean or callback function for saving
    *
-   * @method SettingsManager::clear()
+   * @return {OSjs.Core.SettingsManager}      this
    */
   SettingsManager.clear = function(pool, save) {
     save = (typeof save === 'undefined') || (save === true);
@@ -258,11 +272,14 @@
   // EXPORTS
   /////////////////////////////////////////////////////////////////////////////
 
+  Object.seal(SettingsManager);
+
   /**
    * Get the current SettingsManager  instance
    *
-   * @return SettingsManager
-   * @api OSjs.Core.getSettingsManager()
+   * @function getSettingsManager
+   * @memberof OSjs.Core
+   * @return {OSjs.Core.SettingsManager}
    */
   OSjs.Core.getSettingsManager = function() {
     return SettingsManager;

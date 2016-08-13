@@ -30,9 +30,6 @@
 (function(API, Utils, VFS, GUI) {
   'use strict';
 
-  GUI = OSjs.GUI || {};
-  GUI.Elements = OSjs.GUI.Elements || {};
-
   /////////////////////////////////////////////////////////////////////////////
   // ABSTRACTION HELPERS
   /////////////////////////////////////////////////////////////////////////////
@@ -89,7 +86,9 @@
     var entries = root.querySelectorAll(className);
     var count = entries.length;
 
-    if ( !count ) { return; }
+    if ( !count ) {
+      return;
+    }
 
     if ( key === Utils.Keys.ENTER ) {
       el.dispatchEvent(new CustomEvent('_activate', {detail: {entries: getSelected(el)}}));
@@ -110,7 +109,6 @@
 
           API.setClipboard(data);
         }
-        console.warn();
       }
     };
 
@@ -180,10 +178,21 @@
         map[Utils.Keys.RIGHT] = next;
       }
 
-      if ( map[key] ) { map[key](ev); }
+      if ( map[key] ) {
+        map[key](ev);
+      }
     }
 
     handleKey();
+  }
+
+  function getValueParameter(r) {
+    var value = r.getAttribute('data-value');
+    try {
+      return JSON.parse(value);
+    } catch ( e ) {}
+
+    return value;
   }
 
   function matchValueByKey(r, val, key, idx) {
@@ -212,20 +221,24 @@
    *
    * See `ev.detail` for data on events (like on 'change').
    *
-   * @getter    value     Mixed         The value/currently selected
-   * @getter    selected  Mixed         Alias of 'value'
-   * @getter    entry     Mixed         Gets an etnry by value, key
-   * @setter    value     Mixed         The value/currently selected
-   * @property  multiple  boolean       If multiple elements are selectable
-   * @event     select                  When entry was selected => fn(ev)
-   * @event     activate                When entry was activated => fn(ev)
-   * @action    add                     Add elements(s) => fn(entries)
-   * @action    patch                   Patch/Update elements => fn(entries)
-   * @action    remove                  Removes element => fn(arg)
-   * @action    clear                   Clear elements => fn()
+   * <pre><code>
+   *   getter    value     Mixed         The value/currently selected
+   *   getter    selected  Mixed         Alias of 'value'
+   *   getter    entry     Mixed         Gets an etnry by value, key
+   *   setter    value     Mixed         The value/currently selected
+   *   property  multiple  boolean       If multiple elements are selectable
+   *   event     select                  When entry was selected => fn(ev)
+   *   event     activate                When entry was activated => fn(ev)
+   *   action    add                     Add elements(s) => fn(entries)
+   *   action    patch                   Patch/Update elements => fn(entries)
+   *   action    remove                  Removes element => fn(arg)
+   *   action    clear                   Clear elements => fn()
+   * </code></pre>
    *
-   * @api OSjs.GUI.Elements._dataview
-   * @class
+   * @constructs OSjs.GUI.Element
+   * @memberof OSjs.GUI.Elements
+   * @var DataView
+   * @abstract
    */
   GUI.Elements._dataview = {
     clear: function(el, body) {
@@ -301,22 +314,24 @@
       return this;
     },
 
-    remove: function(el, args, className, target) {
+    remove: function(el, args, className, target, parentEl) {
       function remove(cel) {
         Utils.$remove(cel);
       }
+
+      parentEl = parentEl || el;
 
       if ( target ) {
         remove(target);
         return;
       }
       if ( typeof args[1] === 'undefined' && typeof args[0] === 'number' ) {
-        remove(el.querySelectorAll(className)[args[0]]);
+        remove(parentEl.querySelectorAll(className)[args[0]]);
       } else {
         var findId = args[0];
         var findKey = args[1] || 'id';
         var q = 'data-' + findKey + '="' + findId + '"';
-        el.querySelectorAll(className + '[' + q + ']').forEach(remove);
+        parentEl.querySelectorAll(className + '[' + q + ']').forEach(remove);
       }
 
       this.updateActiveSelection(el, className);
@@ -356,28 +371,6 @@
 
     bindEntryEvents: function(el, row, className) {
 
-      var singleClick = el.getAttribute('data-single-click') === 'true';
-
-      function select(ev) {
-        ev.stopPropagation();
-
-        var multipleSelect = el.getAttribute('data-multiple');
-        multipleSelect = multipleSelect === null || multipleSelect === 'true';
-        var idx = Utils.$index(row);
-        el._selected = handleItemSelection(ev, row, idx, className, el._selected, el, multipleSelect);
-        el.dispatchEvent(new CustomEvent('_select', {detail: {entries: getSelected(el)}}));
-      }
-
-      function activate(ev) {
-        ev.stopPropagation();
-        el.dispatchEvent(new CustomEvent('_activate', {detail: {entries: getSelected(el)}}));
-      }
-
-      function context(ev) {
-        select(ev);
-        el.dispatchEvent(new CustomEvent('_contextmenu', {detail: {entries: getSelected(el), x: ev.clientX, y: ev.clientY}}));
-      }
-
       function createDraggable() {
         var value = row.getAttribute('data-value');
         if ( value !== null ) {
@@ -406,22 +399,6 @@
         }
       }
 
-      if ( singleClick ) {
-        Utils.$bind(row, 'click', function(ev) {
-          select(ev);
-          activate(ev);
-        });
-      } else {
-        Utils.$bind(row, 'click', select, false);
-        Utils.$bind(row, 'dblclick', activate, false);
-      }
-
-      Utils.$bind(row, 'contextmenu', function(ev) {
-        ev.preventDefault();
-        context(ev);
-        return false;
-      }, false);
-
       el.dispatchEvent(new CustomEvent('_render', {detail: {
         element: row,
         data: GUI.Helpers.getViewNodeValue(row)
@@ -445,15 +422,21 @@
       return selected;
     },
 
-    getEntry: function(el, entries, val, key) {
-      var result = null;
-      entries.forEach(function(r, idx) {
-        if ( matchValueByKey(r, val, key, idx) ) {
-          result = r;
-        }
-        return !!result;
+    getEntry: function(el, entries, val, key, asValue) {
+      if ( val ) {
+        var result = null;
+        entries.forEach(function(r, idx) {
+          if ( !result && matchValueByKey(r, val, key, idx) ) {
+            result = r;
+          }
+        });
+
+        return (asValue && result) ? getValueParameter(result) : result;
+      }
+
+      return !asValue ? entries : (entries || []).map(function(iter) {
+        return getValueParameter(iter);
       });
-      return result;
     },
 
     setSelected: function(el, body, entries, val, key, opts) {
@@ -488,6 +471,55 @@
 
       Utils.$addClass(el, 'gui-data-view');
 
+      var singleClick = el.getAttribute('data-single-click') === 'true';
+      var multipleSelect = el.getAttribute('data-multiple');
+      multipleSelect = multipleSelect === null || multipleSelect === 'true';
+
+      function select(ev) {
+        ev.stopPropagation();
+        API.blurMenu();
+
+        var row = (function(t) {
+          var tn = t.tagName.toLowerCase();
+          if ( tn.match(/view$/) ) {
+            return null;
+          }
+
+          if ( tn === 'gui-list-view-column' ) {
+            return t.parentNode;
+          }
+
+          return t;
+        })(ev.isTrusted ? ev.target : (ev.relatedTarget || ev.target));
+
+        var className = row ? row.tagName.toLowerCase() : null;
+
+        if ( className === 'gui-tree-view-expander' ) {
+          OSjs.GUI.Elements[el.tagName.toLowerCase()].call(el, 'expand', {ev: ev, entry: row.parentNode});
+          return;
+        }
+
+        var idx = Utils.$index(row);
+        el._selected = handleItemSelection(ev, row, idx, className, el._selected, el, multipleSelect);
+        el.dispatchEvent(new CustomEvent('_select', {detail: {entries: getSelected(el)}}));
+      }
+
+      function activate(ev) {
+        ev.stopPropagation();
+        API.blurMenu();
+
+        if ( singleClick ) {
+          select(ev);
+        }
+
+        el.dispatchEvent(new CustomEvent('_activate', {detail: {entries: getSelected(el)}}));
+      }
+
+      function context(ev) {
+        select(ev);
+        el.dispatchEvent(new CustomEvent('_contextmenu', {detail: {entries: getSelected(el), x: ev.clientX, y: ev.clientY}}));
+      }
+
       if ( !el.querySelector('textarea.gui-focus-element') && !el.getAttribute('no-selection') ) {
         var underlay = document.createElement('textarea');
         underlay.setAttribute('aria-label', '');
@@ -509,6 +541,19 @@
         Utils.$bind(underlay, 'keypress', function(ev) {
           ev.preventDefault();
         });
+
+        if ( singleClick ) {
+          Utils.$bind(el, 'click', activate, true);
+        } else {
+          Utils.$bind(el, 'click', select, true);
+          Utils.$bind(el, 'dblclick', activate, true);
+        }
+
+        Utils.$bind(el, 'contextmenu', function(ev) {
+          ev.preventDefault();
+          context(ev);
+          return false;
+        }, true);
 
         this.bind(el, 'select', function(ev) {
           if ( Utils.$hasClass(el, 'gui-element-focused') ) {

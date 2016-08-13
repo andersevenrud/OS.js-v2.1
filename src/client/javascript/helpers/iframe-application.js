@@ -31,8 +31,7 @@
 (function(Application, Window, Utils, VFS, GUI) {
   'use strict';
 
-  window.OSjs       = window.OSjs       || {};
-  OSjs.Helpers      = OSjs.Helpers      || {};
+  var IFRAME_COUNT = 0;
 
   /////////////////////////////////////////////////////////////////////////////
   // Iframe Application Window Helper
@@ -41,24 +40,29 @@
   /**
    * IFrame Application Window constructor
    *
+   * <pre><b>
    * This class is a basic implementation of OSjs.Core.Window
    * that uses Iframe as window content. It's usefull for creating
    * applications that is not using OS.js API.
    *
    * You can use this in combination with 'IFrameApplication'
+   * </b></pre>
    *
-   * @option  opts    src       String      The Iframe source
-   * @option  opts    icon      String      The Icon relative/absolute path (./ for app dir)
-   * @option  opts    title     String      The Window title
+   * @summary Helper for making IFrame Applications.
    *
-   * @api OSjs.Helpers.IFrameApplicationWindow
+   * @param  {String}                 name          Window name
+   * @param  {Object}                 opts          Window options
+   * @param  {String}                 opts.src      The Iframe source
+   * @param  {String}                 opts.icon     The Icon relative/absolute path (./ for app dir)
+   * @param  {String}                 opts.title    The Window title
+   * @param  {OSjs.Core.Application}  app           The Application reference
+   *
+   * @constructor
+   * @memberof OSjs.Helpers
    * @see OSjs.Core.Window
+   *
    * @link https://os.js.org/doc/tutorials/iframe-application.html
-   * @extends Window
-   * @class
    */
-  var IFRAME_COUNT = 0;
-
   var IFrameApplicationWindow = function(name, opts, app) {
     opts = Utils.argumentDefaults(opts, {
       src: 'about:blank',
@@ -154,10 +158,10 @@
   /**
    * Post a message to IFrame Application
    *
-   * @param   Mixed       message     The message
-   * @return  void
+   * @function postMessage
+   * @memberof OSjs.Helpers.IframeApplicationWindow#
    *
-   * @method IFrameApplicationWindow::postMessage()
+   * @param   {Mixed}       message     The message
    */
   IFrameApplicationWindow.prototype.postMessage = function(message) {
     if ( this._iwin && this._app ) {
@@ -173,11 +177,11 @@
   /**
    * When Window receives a message from IFrame Application
    *
-   * @param   Mixed       message     The message
-   * @param   DOMEvent    ev          DOM Event
-   * @return  void
+   * @function onPostMessage
+   * @memberof OSjs.Helpers.IframeApplicationWindow#
    *
-   * @method IFrameApplicationWindow::onPostMessage()
+   * @param   {Mixed}       message     The message
+   * @param   {Event}       ev          DOM Event
    */
   IFrameApplicationWindow.prototype.onPostMessage = function(message, ev) {
     console.debug('IFrameApplicationWindow::onPostMessage()', message);
@@ -186,10 +190,10 @@
   /**
    * Set Iframe source
    *
-   * @param   String      src       Source
-   * @return  void
+   * @function setLocation
+   * @memberof OSjs.Helpers.IframeApplicationWindow#
    *
-   * @method IFrameApplicationWindow::setLocation()
+   * @param   {String}      src       Source
    */
   IFrameApplicationWindow.prototype.setLocation = function(src, iframe) {
     iframe = iframe || this._frame;
@@ -207,19 +211,27 @@
   /**
    * IFrame Application constructor
    *
+   * <pre><code>
    * Usage: Just apply the correct options and this should work
    * automatically.
    *
    * This just inits an empty application with a window that uses
    * iframe for contents. Look at the IFrameApplicationWindow
    * constructor for more options you can apply here.
+   * </code></pre>
    *
-   * @option    opts      icon      String      Window Icon
-   * @option    opts      title     String      Window Title
+   * @summary Helper for making IFrame Applications.
    *
-   * @api OSjs.Helpers.IFrameApplication
-   * @extends Application
-   * @class
+   * @param   {String}    name          Process name
+   * @param   {Object}    args          Process arguments
+   * @param   {Object}    metadata      Application metadata
+   * @param   {Object}    opts          Application options
+   * @param   {String}    opts.icon     Window Icon
+   * @param   {String}    opts.title    Window Title
+   *
+   * @constructor
+   * @memberof OSjs.Helpers
+   * @see OSjs.Core.Application
    */
   var IFrameApplication = function(name, args, metadata, opts) {
     Application.call(this, name, args, metadata);
@@ -233,12 +245,6 @@
 
   IFrameApplication.prototype = Object.create(Application.prototype);
 
-  /**
-   * Default init() code (run this last in your Application init() method)
-   *
-   * @see Application::init()
-   * @method IFrameApplication::init()
-   */
   IFrameApplication.prototype.init = function(settings, metadata) {
     Application.prototype.init.apply(this, arguments);
     var name = this.__pname + 'Window';
@@ -246,20 +252,14 @@
   };
 
   /**
-   * When Application receives a message from IFrame Application
-   *
-   * @param   Mixed       message     The message
-   * @param   DOMEvent    ev          DOM Event
-   * @return  void
-   *
-   * @method IFrameApplication::onPostMessage()
+   * @alias OSjs.Helpers.IframeApplicationWindow#onPostMessage
    */
   IFrameApplication.prototype.onPostMessage = function(message, ev) {
     console.debug('IFrameApplication::onPostMessage()', message);
   };
 
   /**
-   * @see IFrameApplicationWindow::postMessage()
+   * @alias OSjs.Helpers.IframeApplicationWindow#postMessage
    */
   IFrameApplication.prototype.postMessage = function(message) {
     var win = this._getMainWindow();

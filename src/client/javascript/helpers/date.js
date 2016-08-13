@@ -31,9 +31,6 @@
 (function(Utils, VFS, API) {
   'use strict';
 
-  window.OSjs       = window.OSjs       || {};
-  OSjs.Helpers      = OSjs.Helpers      || {};
-
   /////////////////////////////////////////////////////////////////////////////
   // HELPERS
   /////////////////////////////////////////////////////////////////////////////
@@ -84,10 +81,12 @@
    *
    * Works just like 'Date', but has some extended methods
    *
-   * @api OSjs.Helpers.Date
-   * @extends Date
-   * @see Date
-   * @class ExtendedDate
+   * @summary Class for date manipulation and formatting.
+   *
+   * @param {(Date|Ojs.Helpers.Date)} [date] Create new instance from this date
+   *
+   * @constructor Date
+   * @memberof OSjs.Helpers
    */
   function ExtendedDate(date) {
     if ( date ) {
@@ -195,9 +194,10 @@
   /**
    * Get the 'Date' Object
    *
-   * @return  Date
+   * @function get
+   * @memberof OSjs.Helpers.Date#
    *
-   * @method  ExtendedDate::get()
+   * @return  {OSjs.Helpers.Date}
    */
   ExtendedDate.prototype.get = function() {
     return this.date;
@@ -206,10 +206,14 @@
   /**
    * Format date
    *
-   * @param   String      fmt     Format (ex: "Y/m/d")
+   * @function format
+   * @memberof OSjs.Helpers.Date#
    *
-   * @return  String              Formatted date
+   * @param   {String}      fmt     Format (ex: "Y/m/d")
    *
+   * @return  {String}              Formatted date
+   *
+   * <pre><code>
    * Format is (same as PHP docs):
    *
    *   d: Day of the month, 2 digits with leading zeros (01 to 31)
@@ -238,8 +242,7 @@
    *   O: Difference to Greenwich time (GMT) in hours (Example: +0200)
    *   T: Timezone abbreviation (Examples: EST, MDT ...)
    *   U: Seconds since the Unix Epoch (January 1 1970 00:00:00 GMT)
-   *
-   * @method  ExtendedDate::format()
+   * </code></pre>
    */
 
   ExtendedDate.prototype.format = function(fmt) {
@@ -249,13 +252,13 @@
   /**
    * Get First day in month
    *
-   * @param   String    fmt     Date format (optional)
+   * @function getFirstDayInMonth
+   * @memberof OSjs.Helpers.Date#
+   * @see OSjs.Helpers.Date#format
    *
-   * @return  Mixed     If no format is given it will return ExtendedDate
+   * @param   {String}    [fmt]     Date format
    *
-   * @see     ExtendedDate::format()
-   *
-   * @method  ExtendedDate::getFirstDayInMonth()
+   * @return  {Mixed}     If no format is given it will return ExtendedDate
    */
   ExtendedDate.prototype.getFirstDayInMonth = function(fmt) {
     return ExtendedDate.getFirstDayInMonth(fmt, null, null, this);
@@ -264,13 +267,13 @@
   /**
    * Get Last day in month
    *
-   * @param   String    fmt     Date format (optional)
+   * @function getLastDayInMonth
+   * @memberof OSjs.Helpers.Date#
+   * @see OSjs.Helpers.Date#format
    *
-   * @return  Mixed     If no format is given it will return ExtendedDate
+   * @param   {String}    [fmt]     Date format
    *
-   * @see     ExtendedDate::format()
-   *
-   * @method  ExtendedDate::getLastDayInMonth()
+   * @return  {Mixed}     If no format is given it will return ExtendedDate
    */
   ExtendedDate.prototype.getLastDayInMonth = function(fmt) {
     return ExtendedDate.getLastDayInMonth(fmt, null, null, this);
@@ -279,9 +282,10 @@
   /**
    * Get numbers of day in month
    *
-   * @return  int     Number of days
+   * @function getDaysInMonth
+   * @memberof OSjs.Helpers.Date#
    *
-   * @method  ExtendedDate::getDaysInMonth()
+   * @return  {Number}     Number of days
    */
   ExtendedDate.prototype.getDaysInMonth = function() {
     return ExtendedDate.getDaysInMonth(null, null, this);
@@ -290,9 +294,10 @@
   /**
    * Get week number
    *
-   * @return  int     Week
+   * @function getWeekNumber
+   * @memberof OSjs.Helpers.Date#
    *
-   * @method  ExtendedDate::getWeekNumber()
+   * @return  {Number}     Week
    */
   ExtendedDate.prototype.getWeekNumber = function() {
     return ExtendedDate.getWeekNumber(this);
@@ -301,12 +306,13 @@
   /**
    * Check if given range is within Month
    *
-   * @param   ExtendedDate    from      From date (can be Date)
-   * @param   ExtendedDate    to        To date (can be Date)
+   * @function isWithinMonth
+   * @memberof OSjs.Helpers.Date#
    *
-   * @return  bool
+   * @param   {(Date|OSjs.Helpers.Date)}    from      From date (can be Date)
+   * @param   {(Date|OSjs.Helpers.Date)}    to        To date (can be Date)
    *
-   * @method  ExtendedDate::isWithinMonth()
+   * @return  {Boolean}
    */
   ExtendedDate.prototype.isWithinMonth = function(from, to) {
     return ExtendedDate.isWithinMonth(this, from, to);
@@ -315,12 +321,10 @@
   /**
    * Check if given range is within Year
    *
-   * @param   ExtendedDate    from      From date (can be Date)
-   * @param   ExtendedDate    to        To date (can be Date)
+   * @function isWithinYear
+   * @memberof OSjs.Helpers.Date#
    *
-   * @return  bool
-   *
-   * @method  ExtendedDate::isWithinYear()
+   * @return  {Boolean}
    */
   ExtendedDate.prototype.getDayOfTheYear = function() {
     return ExtendedDate.getDayOfTheYear();
@@ -330,10 +334,20 @@
   // Static Methods
   //
 
+  /**
+   * @function format
+   * @memberof OSjs.Helpers.Date
+   * @see OSjs.Helpers.Date#format
+   */
   ExtendedDate.format = function(date, fmt) {
     return format(fmt, date);
   };
 
+  /**
+   * @function getPreviousMonth
+   * @memberof OSjs.Helpers.Date
+   * @see OSjs.Helpers.Date#getPreviousMonth
+   */
   ExtendedDate.getPreviousMonth = function(now) {
     now = now ? (now instanceof ExtendedDate ? now.date : now) : new Date();
     var current;
@@ -347,6 +361,11 @@
     return new ExtendedDate(current);
   };
 
+  /**
+   * @function getNextMonth
+   * @memberof OSjs.Helpers.Date
+   * @see OSjs.Helpers.Date#getNextMonth
+   */
   ExtendedDate.getNextMonth = function(now) {
     now = now ? (now instanceof ExtendedDate ? now.date : now) : new Date();
     var current;
@@ -360,6 +379,11 @@
     return new ExtendedDate(current);
   };
 
+  /**
+   * @function getFirstDayInMonth
+   * @memberof OSjs.Helpers.Date
+   * @see OSjs.Helpers.Date#getFirstDayInMonth
+   */
   ExtendedDate.getFirstDayInMonth = function(fmt, y, m, now) {
     now = _now(now);
     y = _y(y, now);
@@ -373,6 +397,11 @@
     return fmt ? format(fmt, date) : new ExtendedDate(date);
   };
 
+  /**
+   * @function getLastDayInMonth
+   * @memberof OSjs.Helpers.Date
+   * @see OSjs.Helpers.Date#getLastDayInMonth
+   */
   ExtendedDate.getLastDayInMonth = function(fmt, y, m, now) {
     now = _now(now);
     y = _y(y, now);
@@ -386,6 +415,11 @@
     return fmt ? format(fmt, date) : new ExtendedDate(date);
   };
 
+  /**
+   * @function getDaysInMonth
+   * @memberof OSjs.Helpers.Date
+   * @see OSjs.Helpers.Date#getDaysInMonth
+   */
   ExtendedDate.getDaysInMonth = function(y, m, now) {
     now = _now(now);
     y = _y(y, now);
@@ -396,6 +430,11 @@
     return parseInt(date.getDate(), 10);
   };
 
+  /**
+   * @function getWeekNumber
+   * @memberof OSjs.Helpers.Date
+   * @see OSjs.Helpers.Date#getWeekNumber
+   */
   ExtendedDate.getWeekNumber = function(now) {
     now = now ? (now instanceof ExtendedDate ? now.date : now) : new Date();
 
@@ -405,6 +444,11 @@
     return Math.ceil((((d - new Date(d.getFullYear(),0,1)) / 8.64e7) + 1) / 7);
   };
 
+  /**
+   * @function getDayName
+   * @memberof OSjs.Helpers.Date
+   * @see OSjs.Helpers.Date#getDayName
+   */
   ExtendedDate.getDayName = function(index, shrt) {
     if ( index < 0 || index === null || typeof index === 'undefined' ) {
       return filter(ExtendedDate.dayNames, index, shrt, 7);
@@ -415,6 +459,11 @@
     return ExtendedDate.dayNames[idx];
   };
 
+  /**
+   * @function getMonthName
+   * @memberof OSjs.Helpers.Date
+   * @see OSjs.Helpers.Date#getMonthName
+   */
   ExtendedDate.getMonthName = function(index, shrt) {
     if ( index < 0 || index === null || typeof index === 'undefined' ) {
       return filter(ExtendedDate.monthNames, index, shrt, 12);
@@ -425,6 +474,11 @@
     return ExtendedDate.monthNames[idx];
   };
 
+  /**
+   * @function isWithinMonth
+   * @memberof OSjs.Helpers.Date
+   * @see OSjs.Helpers.Date#isWithinMonth
+   */
   ExtendedDate.isWithinMonth = function(now, from, to) {
     if ( now.getFullYear() >= from.getFullYear() && now.getMonth() >= from.getMonth() ) {
       if ( now.getFullYear() <= to.getFullYear() && now.getMonth() <= to.getMonth() ) {
@@ -434,6 +488,11 @@
     return false;
   };
 
+  /**
+   * @function getDayOfTheYear
+   * @memberof OSjs.Helpers.Date
+   * @see OSjs.Helpers.Date#getDayOfTheYear
+   */
   ExtendedDate.getDayOfTheYear = function() {
     var now = new Date();
     var start = new Date(now.getFullYear(), 0, 0);
@@ -482,28 +541,41 @@
     }
 
     var map = {
+      /*eslint new-cap: "warn"*/
 
       //
       // DAY
       //
 
       // Day of the month, 2 digits with leading zeros (01 to 31)
-      d: function(s) { return pad(map.j(s)); },
+      d: function(s) {
+        return pad(map.j(s));
+      },
 
       // A textual representation of a day, three letters (Mon through Sun)
-      D: function(s) { return ExtendedDate.dayNames[utc ? date.getUTCDay() : date.getDay()]; },
+      D: function(s) {
+        return ExtendedDate.dayNames[utc ? date.getUTCDay() : date.getDay()];
+      },
 
       // Day of the month without leading zeros (1 to 31)
-      j: function(s) { return (utc ? date.getUTCDate() : date.getDate()); },
+      j: function(s) {
+        return (utc ? date.getUTCDate() : date.getDate());
+      },
 
       // A full textual representation of the day of the week (Sunday through Saturday)
-      l: function(s) { return ExtendedDate.dayNames[(utc ? date.getUTCDay() : date.getDay()) + 7]; },
+      l: function(s) {
+        return ExtendedDate.dayNames[(utc ? date.getUTCDay() : date.getDay()) + 7];
+      },
 
       // Numeric representation of the day of the week (0 (for Sunday) through 6 (for Saturday))
-      w: function(s) { return (utc ? date.getUTCDay() : date.getDay()); },
+      w: function(s) {
+        return (utc ? date.getUTCDay() : date.getDay());
+      },
 
       // The day of the year (starting from 0) (0 through 365)
-      z: function(s) { return date.getDayOfTheYear(); },
+      z: function(s) {
+        return date.getDayOfTheYear();
+      },
 
       // S English ordinal suffix for the day of the month, 2 characters (st, nd, rd or th. Works well with j)
       S: function(s) {
@@ -516,64 +588,96 @@
       //
 
       // ISO-8601 week number of year, weeks starting on Monday (Example: 42 (the 42nd week in the year))
-      W: function(s) { return date.getWeekNumber(); },
+      W: function(s) {
+        return date.getWeekNumber();
+      },
 
       //
       // MONTH
       //
 
       // A full textual representation of a month, such as January or March (January through December)
-      F: function(s) { return ExtendedDate.monthNames[(utc ? date.getUTCMonth() : date.getMonth()) + 12]; },
+      F: function(s) {
+        return ExtendedDate.monthNames[(utc ? date.getUTCMonth() : date.getMonth()) + 12];
+      },
 
       // Numeric representation of a month, with leading zeros (01 through 12)
-      m: function(s) { return pad(map.n(s)); },
+      m: function(s) {
+        return pad(map.n(s));
+      },
 
       // A short textual representation of a month, three letters (Jan through Dec)
-      M: function(s) { return ExtendedDate.monthNames[(utc ? date.getUTCMonth() : date.getMonth())]; },
+      M: function(s) {
+        return ExtendedDate.monthNames[(utc ? date.getUTCMonth() : date.getMonth())];
+      },
 
       // Numeric representation of a month, without leading zeros (1 through 12)
-      n: function(s) { return (utc ? date.getUTCMonth() : date.getMonth()) + 1; },
+      n: function(s) {
+        return (utc ? date.getUTCMonth() : date.getMonth()) + 1;
+      },
 
       // Number of days in the given month (28 through 31)
-      t: function(s) { return date.getDaysInMonth(); },
+      t: function(s) {
+        return date.getDaysInMonth();
+      },
 
       //
       // YEAR
       //
 
       // A full numeric representation of a year, 4 digits (Examples: 1999 or 2003)
-      Y: function(s) { return (utc ? date.getUTCFullYear() : date.getFullYear()); },
+      Y: function(s) {
+        return (utc ? date.getUTCFullYear() : date.getFullYear());
+      },
 
       // A two digit representation of a year (Examples: 99 or 03)
-      y: function(s) { return String(map.Y(s)).slice(2); },
+      y: function(s) {
+        return String(map.Y(s)).slice(2);
+      },
 
       //
       // TIME
       //
 
       // Lowercase Ante meridiem and Post meridiem (am or pm)
-      a: function(s) { return map.G(s) < 12 ? 'am' : 'pm'; },
+      a: function(s) {
+        return map.G(s) < 12 ? 'am' : 'pm';
+      },
 
       // Uppercase Ante meridiem and Post meridiem (AM or PM)
-      A: function(s) { return map.a(s).toUpperCase(); },
+      A: function(s) {
+        return map.a(s).toUpperCase();
+      },
 
       // 12-hour format of an hour without leading zeros (1 through 12)
-      g: function(s) { return map.G(s) % 12 || 12; },
+      g: function(s) {
+        return map.G(s) % 12 || 12;
+      },
 
       // 24-hour format of an hour without leading zeros (0 through 23)
-      G: function(s) { return (utc ? date.getUTCHours() : date.getHours()); },
+      G: function(s) {
+        return (utc ? date.getUTCHours() : date.getHours());
+      },
 
       // 12-hour format of an hour with leading zeros (01 through 12)
-      h: function(s) { return pad(map.g(s)); },
+      h: function(s) {
+        return pad(map.g(s));
+      },
 
       // 24-hour format of an hour with leading zeros (00 through 23)
-      H: function(s) { return pad(map.G(s)); },
+      H: function(s) {
+        return pad(map.G(s));
+      },
 
       // Minutes with leading zeros (00 to 59)
-      i: function(s) { return pad(utc ? date.getUTCMinutes() : date.getMinutes()); },
+      i: function(s) {
+        return pad(utc ? date.getUTCMinutes() : date.getMinutes());
+      },
 
       // Seconds, with leading zeros (00 through 59)
-      s: function(s) { return pad(utc ? date.getUTCSeconds() : date.getSeconds()); },
+      s: function(s) {
+        return pad(utc ? date.getUTCSeconds() : date.getSeconds());
+      },
 
       //
       // ZONE
@@ -581,12 +685,13 @@
 
       // Difference to Greenwich time (GMT) in hours (Example: +0200)
       O: function(s) {
-        var tzo = -date.getTimezoneOffset(),
-            dif = tzo >= 0 ? '+' : '-',
-            ppad = function(num) {
-              var norm = Math.abs(Math.floor(num));
-              return (norm < 10 ? '0' : '') + norm;
-            };
+        var tzo = -date.getTimezoneOffset();
+        var dif = tzo >= 0 ? '+' : '-';
+
+        function ppad(num) {
+          var norm = Math.abs(Math.floor(num));
+          return (norm < 10 ? '0' : '') + norm;
+        }
 
         var str = dif + ppad(tzo / 60) + ':' + ppad(tzo % 60);
         return str;
@@ -594,12 +699,13 @@
 
       // Timezone abbreviation (Examples: EST, MDT ...)
       T: function(s) {
-        var timezone = /\b(?:[PMCEA][SDP]T|(?:Pacific|Mountain|Central|Eastern|Atlantic) (?:Standard|Daylight|Prevailing) Time|(?:GMT|UTC)(?:[-+]\d{4})?)\b/g,
-            timezoneClip = /(\+|\-)[0-9]+$/;
+        if ( utc ) {
+          return 'UTC';
+        }
 
-        if ( utc ) { return 'UTC'; }
+        var timezone = /\b(?:[PMCEA][SDP]T|(?:Pacific|Mountain|Central|Eastern|Atlantic) (?:Standard|Daylight|Prevailing) Time|(?:GMT|UTC)(?:[-+]\d{4})?)\b/g;
         var zones = String(date.date).match(timezone) || [''];
-        return zones.pop().replace(timezoneClip, '');
+        return zones.pop().replace(/(\+|\-)[0-9]+$/, '');
       },
 
       //
@@ -607,7 +713,9 @@
       //
 
       // Seconds since the Unix Epoch (January 1 1970 00:00:00 GMT)
-      U: function(s) { return date.getTime(); }
+      U: function(s) {
+        return date.getTime();
+      }
     };
 
     var result = [];

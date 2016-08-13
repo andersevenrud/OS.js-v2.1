@@ -59,7 +59,7 @@
         if ( (nodeType === 'video' || nodeType === 'audio') && k === 'load' ) {
           k = 'loadedmetadata';
         }
-        Utils.$bind(img, k, val, false);
+        Utils.$bind(img, k, val.bind(img), false);
       } else {
         if ( typeof applyArgs[k] === 'boolean' ) {
           val = val ? 'true' : 'false';
@@ -81,12 +81,15 @@
    *
    * HTML5 Audio Element.
    *
-   * @getter    src   String        The source (src)
-   * @setter    src   String        The source (src)
-   * @property  src   String        The source (src)
+   * <pre><code>
+   *   getter    src   String        The source (src)
+   *   setter    src   String        The source (src)
+   *   property  src   String        The source (src)
+   * </code></pre>
    *
-   * @api OSjs.GUI.Elements.gui-audio
-   * @class
+   * @constructs OSjs.GUI.Element
+   * @memberof OSjs.GUI.Elements
+   * @var gui-audio
    */
   GUI.Elements['gui-audio'] = {
     bind: function(el, evName, callback, params) {
@@ -103,12 +106,15 @@
    *
    * HTML5 Video Element.
    *
-   * @getter    src   String        The source (src)
-   * @setter    src   String        The source (src)
-   * @property  src   String        The source (src)
+   * <pre><code>
+   *   getter    src   String        The source (src)
+   *   setter    src   String        The source (src)
+   *   property  src   String        The source (src)
+   * </code></pre>
    *
-   * @api OSjs.GUI.Elements.gui-video
-   * @class
+   * @constructs OSjs.GUI.Element
+   * @memberof OSjs.GUI.Elements
+   * @var gui-video
    */
   GUI.Elements['gui-video'] = {
     bind: function(el, evName, callback, params) {
@@ -125,12 +131,15 @@
    *
    * Normal Image Element.
    *
-   * @getter    src   String        The source (src)
-   * @setter    src   String        The source (src)
-   * @property  src   String        The source (src)
+   * <pre><code>
+   *   getter    src   String        The source (src)
+   *   setter    src   String        The source (src)
+   *   property  src   String        The source (src)
+   * </code></pre>
    *
-   * @api OSjs.GUI.Elements.gui-image
-   * @class
+   * @constructs OSjs.GUI.Element
+   * @memberof OSjs.GUI.Elements
+   * @var gui-image
    */
   GUI.Elements['gui-image'] = {
     bind: function(el, evName, callback, params) {
@@ -147,12 +156,15 @@
    *
    * Canvas Element.
    *
-   * @getter    src   String        The source (src)
-   * @setter    src   String        The source (src)
-   * @property  src   String        The source (src)
+   * <pre><code>
+   *   getter    src   String        The source (src)
+   *   setter    src   String        The source (src)
+   *   property  src   String        The source (src)
+   * </code></pre>
    *
-   * @api OSjs.GUI.Elements.gui-canvas
-   * @class
+   * @constructs OSjs.GUI.Element
+   * @memberof OSjs.GUI.Elements
+   * @var gui-canvas
    */
   GUI.Elements['gui-canvas'] = {
     bind: function(el, evName, callback, params) {

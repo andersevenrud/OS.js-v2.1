@@ -30,9 +30,6 @@
 (function() {
   'use strict';
 
-  window.OSjs = window.OSjs || {};
-  OSjs.Utils  = OSjs.Utils  || {};
-
   /////////////////////////////////////////////////////////////////////////////
   // EXPORTS
   /////////////////////////////////////////////////////////////////////////////
@@ -40,9 +37,10 @@
   /**
    * Gets browser compability flags
    *
-   * @return    Object      List of compability
+   * @function getCompability
+   * @memberof OSjs.Utils
    *
-   * @api       OSjs.Utils.getCompability()
+   * @return    {Object}      List of compability
    */
   OSjs.Utils.getCompability = (function() {
     function _checkSupport(enabled, check, isSupported) {
@@ -161,14 +159,16 @@
     }
 
     function detectCSSFeature(featurename) {
-      var feature             = false,
-          domPrefixes         = 'Webkit Moz ms O'.split(' '),
-          elm                 = document.createElement('div'),
-          featurenameCapital  = null;
+      var feature = false;
+      var domPrefixes = 'Webkit Moz ms O'.split(' ');
+      var elm = document.createElement('div');
+      var featurenameCapital = null;
 
       featurename = featurename.toLowerCase();
 
-      if ( elm.style[featurename] ) { feature = true; }
+      if ( elm.style[featurename] ) {
+        feature = true;
+      }
 
       if ( feature === false ) {
         featurenameCapital = featurename.charAt(0).toUpperCase() + featurename.substr(1);
@@ -294,8 +294,8 @@
    * @api       OSjs.Utils.isIE()
    */
   OSjs.Utils.isIE = function() {
-    var myNav = navigator.userAgent.toLowerCase();
-    return (myNav.indexOf('msie') !== -1) ? parseInt(myNav.split('msie')[1], 10) : false;
+    var dm = parseInt(document.documentMode, 10);
+    return dm <= 11 || !!navigator.userAgent.match(/(MSIE|Edge)/);
   };
 
   /**
@@ -303,9 +303,10 @@
    *
    * For example 'en_EN'
    *
-   * @return  String          Locale string
+   * @function getUserLocale
+   * @memberof OSjs.Utils
    *
-   * @api     OSjs.Utils.getUserLocale()
+   * @return  {String}          Locale string
    */
   OSjs.Utils.getUserLocale = function() {
     var loc = ((window.navigator.userLanguage || window.navigator.language) || 'en-EN').replace('-', '_');
@@ -331,8 +332,10 @@
   /**
    * Gets the browser window rect (x, y, width, height)
    *
-   * @api OSjs.Utils.getRect()
-   * @return Object
+   * @function getRect
+   * @memberof OSjs.Utils
+   *
+   * @return {Object}
    */
   OSjs.Utils.getRect = function() {
     return {

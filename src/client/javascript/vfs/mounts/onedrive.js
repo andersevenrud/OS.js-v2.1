@@ -30,15 +30,14 @@
 (function(Utils, API) {
   'use strict';
 
+  /**
+   * @namespace OneDrive
+   * @memberof OSjs.VFS.Modules
+   */
+
   // https://social.msdn.microsoft.com/forums/onedrive/en-US/5e259b9c-8e9e-40d7-95c7-722ef5bb6d38/upload-file-to-skydrive-using-javascript
   // http://msdn.microsoft.com/en-us/library/hh826531.aspx
   // http://msdn.microsoft.com/en-us/library/dn659726.aspx
-
-  //var WL   = window.WL   = window.WL    || {};
-  var OSjs = window.OSjs = window.OSjs  || {};
-
-  OSjs.VFS          = OSjs.VFS          || {};
-  OSjs.VFS.Modules  = OSjs.VFS.Modules  || {};
 
   var _isMounted    = false;
 
@@ -182,7 +181,7 @@
           return;
         }
 
-        var dir = OSjs.VFS.getRelativeURL(Utils.dirname(found.path));
+        var dir = Utils.getRelativeURL(Utils.dirname(found.path));
         var foundFile = getMetadataFromItem(dir, found);
         callback(false, foundFile);
       } else {
@@ -203,7 +202,7 @@
       }
     }
 
-    var path = OSjs.VFS.getRelativeURL(item.path).replace(/\/+/, '/');
+    var path = Utils.getRelativeURL(item.path).replace(/\/+/, '/');
     if ( useParent ) {
       path = Utils.dirname(path);
     }
@@ -286,7 +285,7 @@
 
     console.info('OneDrive::scandir()', item);
 
-    var relativePath = OSjs.VFS.getRelativeURL(item.path);
+    var relativePath = Utils.getRelativeURL(item.path);
 
     function _finished(error, result) {
       console.groupEnd();
@@ -333,7 +332,8 @@
         return;
       }
 
-      OSjs.VFS.remoteRead(url, item.mime, function(error, response) {
+      var file = new OSjs.VFS.File(url, item.mime);
+      OSjs.VFS.read(file, function(error, response) {
         if ( error ) {
           callback(error);
           return;
@@ -347,9 +347,21 @@
     console.info('OneDrive::write()', file);
 
     var inst = OSjs.Helpers.WindowsLiveAPI.getInstance();
-    var url = '//apis.live.net/v5.0/me/skydrive/files?access_token=' + inst.accessToken;
+    var url = 'https://apis.live.net/v5.0/me/skydrive/files?access_token=' + inst.accessToken;
     var fd  = new FormData();
-    OSjs.VFS.addFormFile(fd, 'file', data, file);
+    OSjs.VFS.Helpers.addFormFile(fd, 'file', data, file);
+
+    /*
+    API.curl({
+      url: url,
+      method: 'POST',
+      json: true,
+      body: fd,
+    }, function(err, result) {
+      if ( err ) {
+      }
+    });
+    */
 
     OSjs.Utils.ajax({
       url: url,
@@ -572,6 +584,10 @@
     callback(API._('ERR_VFS_UNAVAILABLE'));
   };
 
+  OneDriveStorage.freeSpace = function(root, callback) {
+    callback(false, -1);
+  };
+
   /////////////////////////////////////////////////////////////////////////////
   // WRAPPERS
   /////////////////////////////////////////////////////////////////////////////
@@ -597,7 +613,7 @@
         }
 
         _isMounted = true;
-        API.message('vfs', {type: 'mount', module: 'OneDrive', source: null});
+        API.message('vfs:mount', 'OneDrive', {source: null});
         callback(OneDriveStorage);
       });
       return;
@@ -632,18 +648,19 @@
 
   /**
    * This is the Microsoft OneDrive VFS Abstraction for OS.js
-   *
-   * @api OSjs.VFS.Modules.OneDrive
    */
-  OSjs.VFS.Modules.OneDrive = OSjs.VFS.Modules.OneDrive || OSjs.VFS._createMountpoint({
+  OSjs.Core.getMountManager()._add({
     readOnly: false,
+    name: 'OneDrive',
+    transport: 'OneDrive',
     description: 'OneDrive',
     visible: true,
+    searchable: false,
     unmount: function(cb) {
       // FIXME: Should we sign out here too ?
       cb = cb || function() {};
       _isMounted = false;
-      API.message('vfs', {type: 'unmount', module: 'OneDrive', source: null});
+      API.message('vfs:unmount', 'OneDrive', {source: null});
       cb(false, true);
     },
     mounted: function() {

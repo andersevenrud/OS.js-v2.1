@@ -43,11 +43,14 @@
    *
    * A box that displays a color.
    *
-   * @getter    value   String        The value (color)
-   * @setter    value   String        The value (color)
+   * <pre><code>
+   *   getter    value   String        The value (color)
+   *   setter    value   String        The value (color)
+   * </code></pre>
    *
-   * @api OSjs.GUI.Elements.gui-color-box
-   * @class
+   * @constructs OSjs.GUI.Element
+   * @memberof OSjs.GUI.Elements
+   * @var gui-color-box
    */
   GUI.Elements['gui-color-box'] = {
     bind: function(el, evName, callback, params) {
@@ -74,12 +77,15 @@
    *
    * See `ev.detail` for data on events (like on 'change').
    *
-   * @getter    value   String        The value (color)
-   * @setter    value   String        The value (color)
-   * @event     change                When input has changed => fn(ev)
+   * <pre><code>
+   *   getter    value   String        The value (color)
+   *   setter    value   String        The value (color)
+   *   event     change                When input has changed => fn(ev)
+   * </code></pre>
    *
-   * @api OSjs.GUI.Elements.gui-color-swatch
-   * @class
+   * @constructs OSjs.GUI.Element
+   * @memberof OSjs.GUI.Elements
+   * @var gui-color-swatch
    */
   GUI.Elements['gui-color-swatch'] = {
     bind: function(el, evName, callback, params) {
@@ -151,10 +157,13 @@
    *
    * IFrame container. On NW/Electron/X11 this is a "webview"
    *
-   * @property  src     String        The source (src)
+   * <pre><code>
+   *   property  src     String        The source (src)
+   * </code></pre>
    *
-   * @api OSjs.GUI.Elements.gui-iframe
-   * @class
+   * @constructs OSjs.GUI.Element
+   * @memberof OSjs.GUI.Elements
+   * @var gui-iframe
    */
   GUI.Elements['gui-iframe'] = (function() {
     var tagName = 'iframe';
@@ -184,11 +193,14 @@
    *
    * Progress bar element.
    *
-   * @setter    progress    integer     Progress value (percentage)
-   * @property  progress    integer     Progress value (percentage)
+   * <pre><code>
+   *   setter    progress    integer     Progress value (percentage)
+   *   property  progress    integer     Progress value (percentage)
+   * </code></pre>
    *
-   * @api OSjs.GUI.Elements.gui-progress-bar
-   * @class
+   * @constructs OSjs.GUI.Element
+   * @memberof OSjs.GUI.Elements
+   * @var gui-progress-bar
    */
   GUI.Elements['gui-progress-bar'] = {
     set: function(el, param, value) {
@@ -234,11 +246,14 @@
    *
    * Status bar element.
    *
-   * @setter    value       String      Content to set
-   * @setter    label       String      Alias of 'value'
+   * <pre><code>
+   *   setter    value       String      Content to set
+   *   setter    label       String      Alias of 'value'
+   * </code></pre>
    *
-   * @api OSjs.GUI.Elements.gui-statusbar
-   * @class
+   * @constructs OSjs.GUI.Element
+   * @memberof OSjs.GUI.Elements
+   * @var gui-statusbar
    */
   GUI.Elements['gui-statusbar'] = {
     set: function(el, param, value) {
@@ -253,8 +268,30 @@
       return false;
     },
     build: function(el) {
-      var lbl = el.getAttribute('data-label') || el.getAttribute('data-value') || el.innerHTML || '';
       var span = document.createElement('gui-statusbar-label');
+
+      var lbl = el.getAttribute('data-label') || el.getAttribute('data-value');
+      if ( !lbl ) {
+        lbl = (function() {
+          var textNodes = [];
+          var node, value;
+          for ( var i = 0; i < el.childNodes.length; i++ ) {
+            node = el.childNodes[i];
+            if ( node.nodeType === Node.TEXT_NODE ) {
+              value = node.nodeValue.replace(/\s+/g, '').replace(/^\s+/g, '');
+              if ( value.length > 0 ) {
+                textNodes.push(value);
+              }
+
+              el.removeChild(node);
+              i++;
+            }
+          }
+
+          return textNodes.join(' ');
+        })();
+      }
+
       span.innerHTML = lbl;
       el.setAttribute('role', 'log');
       el.appendChild(span);

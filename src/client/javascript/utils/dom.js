@@ -30,128 +30,6 @@
 (function() {
   'use strict';
 
-  window.OSjs = window.OSjs || {};
-  OSjs.Utils  = OSjs.Utils  || {};
-
-  /////////////////////////////////////////////////////////////////////////////
-  // PRIVATES
-  /////////////////////////////////////////////////////////////////////////////
-
-  function EventCollection() {
-    this.collection = [];
-  }
-
-  EventCollection.prototype.add = function(el, iter) {
-    el.addEventListener.apply(el, iter);
-    this.collection.push([el, iter]);
-  };
-
-  EventCollection.prototype.destroy = function(el, iter) {
-    this.collection.forEach(function(iter) {
-      if ( iter[0] && iter[1] ) {
-        iter[0].removeEventListener.apply(iter[0], iter[1]);
-      }
-    });
-  };
-
-  /////////////////////////////////////////////////////////////////////////////
-  // EVENTS
-  /////////////////////////////////////////////////////////////////////////////
-
-  /**
-   * Prevents default Event (shortcut)
-   *
-   * @api OSjs.Utils._preventDefault()
-   * @return bool
-   */
-  OSjs.Utils._preventDefault = function(ev) {
-    ev.preventDefault();
-    return false;
-  };
-
-  /**
-   * A collection of keycode mappings
-   *
-   * @api OSjs.Utils.Keys
-   * @var
-   */
-  OSjs.Utils.Keys = {
-    F1: 112,
-    F2: 113,
-    F3: 114,
-    F4: 115,
-    F6: 118,
-    F7: 119,
-    F8: 120,
-    F9: 121,
-    F10: 122,
-    F11: 123,
-    F12: 124,
-
-    TILDE:      220,
-
-    CMD:        17,
-    LSUPER:     91,
-    RSUPER:     92,
-
-    DELETE:     46,
-    INSERT:     45,
-    HOME:       36,
-    END:        35,
-    PGDOWN:     34,
-    PGUP:       33,
-    PAUSE:      19,
-    BREAK:      19,
-    CAPS_LOCK:  20,
-    SCROLL_LOCK:186,
-
-    BACKSPACE:  8,
-    SPACE:      32,
-    TAB:        9,
-    ENTER:      13,
-    ESC:        27,
-    LEFT:       37,
-    RIGHT:      39,
-    UP:         38,
-    DOWN:       40
-  };
-
-  (function() {
-    for ( var n = 48; n <= 57; n++ ) {
-      OSjs.Utils.Keys[String.fromCharCode(n).toUpperCase()] = n;
-    }
-    for ( var c = 65; c <= 90; c++ ) {
-      OSjs.Utils.Keys[String.fromCharCode(c).toUpperCase()] = c;
-    }
-  })();
-
-  /**
-   * Get the mouse button pressed
-   *
-   * @param   DOMEvent  ev    The DOM Event
-   *
-   * @return  String          The mouse button (left/middle/right)
-   *
-   * @api     OSjs.Utils.mouseButton()
-   */
-  OSjs.Utils.mouseButton = function(ev) {
-    if ( typeof ev.button !== 'undefined' ) {
-      if ( ev.button === 0 ) {
-        return 'left';
-      } else if ( ev.button === 1 ) {
-        return 'middle';
-      }
-      return 'right';
-    }
-
-    if ( ev.which === 2 || ev.which === 4 ) {
-      return 'middle';
-    } else if ( ev.which === 1 ) {
-      return 'left';
-    }
-    return 'right';
-  };
-
   /////////////////////////////////////////////////////////////////////////////
   // DOM
   /////////////////////////////////////////////////////////////////////////////
@@ -159,11 +37,12 @@
   /**
    * Get element by ID
    *
-   * @param   String    id      DOM Element ID
+   * @function $
+   * @memberof OSjs.Utils
    *
-   * @return  DOMElement        Found element or null
+   * @param   {String}    id      DOM Element ID
    *
-   * @api     OSjs.Utils.$()
+   * @return  {Node}        Found element or null
    */
   OSjs.Utils.$ = function(id) {
     return document.getElementById(id);
@@ -172,11 +51,12 @@
   /**
    * Remove unwanted characters from ID or className
    *
-   * @param   String    str     The name
+   * @function $safeName
+   * @memberof OSjs.Utils
    *
-   * @return  String            The new name
+   * @param   {String}    str     The name
    *
-   * @api     OSjs.Utils.$safeName()
+   * @return  {String}            The new name
    */
   OSjs.Utils.$safeName = function(str) {
     return (str || '').replace(/[^a-zA-Z0-9]/g, '_');
@@ -185,11 +65,10 @@
   /**
    * Remove given element from parent
    *
-   * @param   DOMElement    node      The DOM Element
+   * @function $remove
+   * @memberof OSjs.Utils
    *
-   * @return  null
-   *
-   * @api     OSjs.Utils.$remove()
+   * @param   {Node}    node      The DOM Element
    */
   OSjs.Utils.$remove = function(node) {
     if ( node && node.parentNode ) {
@@ -201,11 +80,10 @@
   /**
    * Empty this element (remove children)
    *
-   * @param   DOMElement    myNode      The DOM Element
+   * @function $empty
+   * @memberof OSjs.Utils
    *
-   * @return  void
-   *
-   * @api     OSjs.Utils.$empty()
+   * @param   {Node}    myNode      The DOM Element
    */
   OSjs.Utils.$empty = function(myNode) {
     if ( myNode ) {
@@ -218,12 +96,13 @@
   /**
    * Get CSS style attribute
    *
-   * @param   DOMElement    oElm          The DOM Element
-   * @param   String        strCssRule    The CSS rule to get
+   * @function $getStyle
+   * @memberof OSjs.Utils
    *
-   * @return  String                      Style attribute
+   * @param   {Node}          oElm          The DOM Element
+   * @param   {String}        strCssRule    The CSS rule to get
    *
-   * @api     OSjs.Utils.$getStyle()
+   * @return  {String}                      Style attribute
    */
   OSjs.Utils.$getStyle = function(oElm, strCssRule) {
     var strValue = '';
@@ -244,12 +123,13 @@
    * Modern browsers will return getBoundingClientRect()
    * See DOM documentation
    *
-   * @param   DOMElement      el        The Element to find position of
-   * @param   DOMElement      parentEl  Optional parent to end loop in
+   * @function $position
+   * @memberof OSjs.Utils
    *
-   * @return  Object                    The bounding box
+   * @param   {Node}      el          The Element to find position of
+   * @param   {Node}      [parentEl]  Parent to end loop in
    *
-   * @api     OSjs.Utils.$position()
+   * @return  {Object}                    The bounding box
    */
   OSjs.Utils.$position = function(el, parentEl) {
     if ( el ) {
@@ -271,36 +151,74 @@
   };
 
   /**
+   * Traverses down to the parentnode validated by filter
+   *
+   * @function $parent
+   * @memberof OSjs.Utils
+   *
+   * @param   {Node}            el        The Element to find position of
+   * @param   {Function}        cb        The callback function => fn(node) return true/false here
+   *
+   * @return  {Node}            el        The DOM element
+   */
+  OSjs.Utils.$parent = function(el, cb) {
+    var result = null;
+
+    if ( el && cb ) {
+      var current = el;
+      while ( current.parentNode ) {
+        if ( cb(current) ) {
+          result = current;
+          break;
+        }
+        current = current.parentNode;
+      }
+    }
+
+    return result;
+  };
+
+  /**
    * Get the index of an element within a node
    *
-   * @param   DOMElement    el          Element to check
-   * @param   DOMElement    parentEl    Optional parent (automatically checked)
+   * @function $index
+   * @memberof OSjs.Utils
    *
-   * @return  int                       The index
+   * @param   {Node}      el          The Element to check
+   * @param   {Node}      [parentEl]  Parent to end loop in
    *
-   * @api     OSjs.Utils.$index()
+   * @return  {Number}              The index
    */
   OSjs.Utils.$index = function(el, parentEl) {
-    parentEl = parentEl || el.parentNode;
-    var nodeList = Array.prototype.slice.call(parentEl.children);
-    var nodeIndex = nodeList.indexOf(el, parentEl);
-    return nodeIndex;
+    if ( el ) {
+      parentEl = parentEl || el.parentNode;
+      if ( parentEl ) {
+        var nodeList = Array.prototype.slice.call(parentEl.children);
+        var nodeIndex = nodeList.indexOf(el, parentEl);
+        return nodeIndex;
+      }
+    }
+    return -1;
   };
 
   /**
    * Selects range in a text field
    *
-   * @param     DOMElement      field     The DOM Element
-   * @param     int             start     Start position
-   * @param     int             end       End position
+   * @function $selectRange
+   * @memberof OSjs.Utils
    *
-   * @return    void
-   *
-   * @api       OSjs.Utils.$selectRange()
+   * @param     {Node}      field     The DOM Element
+   * @param     {Number}    start     Start position
+   * @param     {Number}    end       End position
    */
   OSjs.Utils.$selectRange = function(field, start, end) {
-    if ( !field ) { throw new Error('Cannot select range: missing element'); }
-    if ( typeof start === 'undefined' || typeof end === 'undefined' ) { throw new Error('Cannot select range: mising start/end'); }
+    if ( !field ) {
+      throw new Error('Cannot select range: missing element');
+    }
+
+    if ( typeof start === 'undefined' || typeof end === 'undefined' ) {
+      throw new Error('Cannot select range: mising start/end');
+    }
 
     if ( field.createTextRange ) {
       var selRange = field.createTextRange();
@@ -322,49 +240,51 @@
   /**
    * Add a className to a DOM Element
    *
-   * @param   DOMElement      el      The dom Element
-   * @param   String          name    The class name
+   * @function $addClass
+   * @memberof OSjs.Utils
    *
-   * @return  void
-   *
-   * @api     OSjs.Utils.$addClass()
+   * @param   {Node}      el      The dom Element
+   * @param   {String}    name    The class name
    */
   OSjs.Utils.$addClass = function(el, name) {
-    if ( el && name && !this.$hasClass(el, name) ) {
-      el.className += (el.className ? ' ' : '') + name;
+    if ( el ) {
+      name.split(' ').forEach(function(n) {
+        el.classList.add(n);
+      });
     }
   };
 
   /**
    * Remove a className from a DOM Element
    *
-   * @param   DOMElement      el      The dom Element
-   * @param   String          name    The class name
+   * @function $removeClass
+   * @memberof OSjs.Utils
    *
-   * @return  void
-   *
-   * @api     OSjs.Utils.$removeClass()
+   * @param   {Node}      el      The dom Element
+   * @param   {String}    name    The class name
    */
   OSjs.Utils.$removeClass = function(el, name) {
-    if ( el && name && this.$hasClass(el, name) ) {
-      var re = new RegExp('\\s?' + name);
-      el.className = el.className.replace(re, '');
+    if ( el ) {
+      name.split(' ').forEach(function(n) {
+        el.classList.remove(n);
+      });
     }
   };
 
   /**
    * Check if a DOM Element has given className
    *
-   * @param   DOMElement      el      The dom Element
-   * @param   String          name    The class name
+   * @function $hasClass
+   * @memberof OSjs.Utils
    *
-   * @return  boolean
-   *
-   * @api     OSjs.Utils.$hasClass()
+   * @param   {Node}      el      The dom Element
+   * @param   {String}    name    The class name
    */
   OSjs.Utils.$hasClass = function(el, name) {
     if ( el && name ) {
-      return el.className.replace(/\s+/, ' ').split(' ').indexOf(name) >= 0;
+      return name.split(' ').every(function(n) {
+        return el.classList.contains(n);
+      });
     }
     return false;
   };
@@ -374,11 +294,12 @@
    *
    * works sort of like PHPs htmlspecialchars()
    *
-   * @param   String    str       Input
+   * @function $escape
+   * @memberof OSjs.Utils
    *
-   * @return  String              Escaped HTML
+   * @param   {String}    str       Input
    *
-   * @api     OSjs.Utils.$escape()
+   * @return  {String}              Escaped HTML
    */
   OSjs.Utils.$escape = function(str) {
     var div = document.createElement('div');
@@ -389,11 +310,12 @@
   /**
    * Create a link stylesheet tag
    *
-   * @param   String      src     The URL of resource
+   * @function $createCSS
+   * @memberof OSjs.Utils
    *
-   * @return  DOMElement          The tag
+   * @param   {String}      src     The URL of resource
    *
-   * @api     OSjs.Utils.$createCSS()
+   * @return  {Node}                The tag
    */
   OSjs.Utils.$createCSS = function(src) {
     var res    = document.createElement('link');
@@ -409,14 +331,15 @@
   /**
    * Create a script tag
    *
-   * @param   String      src                   The URL of resource
-   * @param   Function    onreadystatechange    readystatechange callback
-   * @param   Function    onload                onload callback
-   * @param   Function    onerror               onerror callback
+   * @function $createJS
+   * @memberof OSjs.Utils
    *
-   * @return  DOMElement                        The tag
+   * @param   {String}      src                   The URL of resource
+   * @param   {Function}    onreadystatechange    readystatechange callback
+   * @param   {Function}    onload                onload callback
+   * @param   {Function}    onerror               onerror callback
    *
-   * @api     OSjs.Utils.$createJS()
+   * @return  {Node}                              The tag
    */
   OSjs.Utils.$createJS = function(src, onreadystatechange, onload, onerror) {
     var res                = document.createElement('script');
@@ -435,12 +358,13 @@
   /**
    * Check if event happened on a form element
    *
-   * @param   DOMEvent    ev      DOM Event
-   * @param   Array       types   Array of types
+   * @function $isFormElement
+   * @memberof OSjs.Utils
    *
-   * @return  boolean             If is a form element
+   * @param   {Event}       ev      DOM Event
+   * @param   {Array}       types   Array of types
    *
-   * @api     OSjs.Utils.$isFormElement()
+   * @return  {Boolean}             If is a form element
    */
   OSjs.Utils.$isFormElement = function(ev, types) {
     types = types || ['TEXTAREA', 'INPUT', 'SELECT'];
@@ -457,148 +381,60 @@
   };
 
   /**
-   * Alias
-   *
-   * @see OSjs.Utils.$isFormElement()
-   * @api OSjs.Utils.$isInput()
+   * @function $isInput
+   * @memberof OSjs.Utils
+   * @alias OSjs.Utils.isFormElement
+   * @deprecated Please use aliased method instead
    */
   OSjs.Utils.$isInput = function(ev) {
-    return this.$isFormElement(ev); //, ['TEXTAREA', 'INPUT']);
+    console.warn('Utils::$isInput is deprecated', 'Use Utils::$isFormElement instead');
+    return this.$isFormElement(ev);
   };
 
   /**
-   * Wrapper for event-binding
+   * Set or Get element CSS
    *
-   * @param   DOMElement    el          DOM Element to attach event to
-   * @param   String        ev          DOM Event Name
-   * @param   Function      callback    Callback on event
+   * @param {Node}                  el      DOM Node
+   * @param {(String|Object)}       ink     CSS attribute name to get/set, or full dict to set
+   * @param {(String|Number)}       [inv]   If previous argument was a string, this is the value that will be set
    *
-   * @return  EventCollection           Use this object to unbind generated events
+   * @return {String} CSS attribute value
    *
-   * @api OSjs.Utils.$bind()
+   * @example
+   * Utils.$css(element, {
+   *  backgroundColor: '#000',
+   *  'font-size': '14px' // You can also use CSS attributes like normal
+   * });
+   *
+   * @example
+   * Utils.$css(element, 'font-family', 'Arial');
+   *
+   * @example
+   * Utils.$css(element, 'font-family'); // -> 'Arial'. Same as $getStyle
+   *
+   * @function $css
+   * @memberof OSjs.Utils
    */
-  OSjs.Utils.$bind = (function() {
-
-    function pos(ev, touchDevice) {
-      return {
-        x: (touchDevice ? (ev.changedTouches[0] || {}) : ev).clientX,
-        y: (touchDevice ? (ev.changedTouches[0] || {}) : ev).clientY
-      };
+  OSjs.Utils.$css = function(el, ink, inv) {
+    function rep(k) {
+      return k.replace(/\-(\w)/g, function(strMatch, p1) {
+        return p1.toUpperCase();
+      });
     }
 
-    function createTouchHandler(el, evName, collection, callback, signal) {
-      var holdTimeout = null;
-      var whenFinished = false;
-      var isDone = false;
-
-      function cbs(ev) {
-        isDone = false;
-        signal();
-
-        if ( evName === 'click' ) {
-          whenFinished = function() {
-            if ( !isDone ) {
-              isDone = true;
-              callback.call(el, ev, pos(ev, true), true);
-            }
-          };
-
-          holdTimeout = setTimeout(function() {
-            whenFinished = false;
-          }, 300);
-        } else if ( evName === 'contextmenu' ) {
-          holdTimeout = setTimeout(function() {
-            if ( !isDone ) {
-              isDone = true;
-              ev.stopPropagation();
-              ev.preventDefault();
-              callback.call(el, ev, pos(ev, true), true);
-            }
-          }, 450);
-        } else if ( evName === 'dblclick' ) {
-          if ( el.getAttribute('data-tmp-clicked') !== 'true' ) {
-            el.setAttribute('data-tmp-clicked', 'true');
-
-            setTimeout(function() {
-              el.removeAttribute('data-tmp-clicked');
-            }, 500);
-          } else {
-            ev.stopPropagation();
-            ev.preventDefault();
-            callback.call(el, ev, pos(ev, true), true);
-          }
-        }
+    var obj = {};
+    if ( arguments.length === 2 ) {
+      if ( typeof ink === 'string' ) {
+        return el.parentNode ? OSjs.Utils.$getStyle(el, ink) : el.style[rep(ink)];
       }
-
-      function cbe(ev) {
-        signal();
-
-        if ( typeof whenFinished === 'function' ) {
-          whenFinished();
-        }
-
-        holdTimeout = clearTimeout(holdTimeout);
-        whenFinished = false;
-      }
-
-      collection.add(el, ['touchstart', cbs, true]);
-      collection.add(el, ['touchend', cbe, true]);
+      obj = ink;
+    } else if ( arguments.length === 3 ) {
+      obj[ink] = inv;
     }
 
-    return function(el, evName, callback, param) {
-
-      var touchMap = {
-        click: createTouchHandler,
-        contextmenu: createTouchHandler,
-        dblclick: createTouchHandler,
-        mouseup: 'touchend',
-        mousemove: 'touchmove',
-        mousedown: 'touchstart'
-      };
-
-      var collection = new EventCollection();
-      var tev = touchMap[evName];
-      var wasTouch = false;
-
-      function cbTouch(ev) {
-        callback.call(el, ev, pos(ev, true), true);
-      }
-
-      function cbNormal(ev) {
-        if ( !wasTouch ) {
-          callback.call(el, ev, pos(ev), false);
-        }
-      }
-
-      if ( typeof tev === 'function' ) {
-        tev(el, evName, collection, callback, function() {
-          wasTouch = true;
-        });
-      } else if ( typeof tev === 'string' ) {
-        collection.add(el, [tev, cbTouch, param === true]);
-      }
-
-      collection.add(el, [evName, cbNormal, param === true]);
-
-      return collection;
-    };
-  })();
-
-  /**
-   * Unbinds the given EventCollection
-   *
-   * @param   EventCollection     collection      The object returned by $bind()
-   *
-   * @return  null
-   *
-   * @see OSjs.Utils.$bind()
-   * @api OSjs.Utils.$unbind()
-   */
-  OSjs.Utils.$unbind = function(collection) {
-    if ( collection && collection instanceof EventCollection ) {
-      collection.destroy();
-    }
-    return null;
+    Object.keys(obj).forEach(function(k) {
+      el.style[rep(k)] = String(obj[k]);
+    });
   };
 
 })();

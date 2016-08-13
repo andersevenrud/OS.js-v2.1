@@ -30,9 +30,6 @@
 (function() {
   'use strict';
 
-  window.OSjs = window.OSjs || {};
-  OSjs.Utils  = OSjs.Utils  || {};
-
   /////////////////////////////////////////////////////////////////////////////
   // EXPORTS
   /////////////////////////////////////////////////////////////////////////////
@@ -41,27 +38,25 @@
    * Common function for handling all types of XHR calls
    * including download/upload and JSONP
    *
-   * @param   Object      args      Aguments (see below)
+   * @function ajax
+   * @memberof OSjs.Utils
    *
-   * @option args String     url                  The URL
-   * @option args String     method               HTTP Call method: (POST/GET, default = GET)
-   * @option args Mixed      body                 Optional body to send (for POST)
-   * @option args integer    timeout              Optional timeout (in milliseconds)
-   * @option args String     responseType         HTTP Response type (default = null)
-   * @option args Object     requestHeaders       Tuple with headers (default = null)
-   * @option args boolean    json                 Handle as a JSON request/response (default = false)
-   * @option args boolean    jsonp                Handle as a JSONP request (default = false)
-   * @option args Array      acceptcodes          Array of accepted status codes for success signal [arraybuffer] (Optional)
-   * @option args Function   onerror              onerror callback => fn(error, evt, request, url)
-   * @option args Function   onsuccess            onsuccess callback => fn(result, request, url)
-   * @option args Function   oncreated            oncreated callback => fn(request)
-   * @option args Function   onfailed             onfailed callback => fn(evt)
-   * @option args Function   oncanceled           oncanceled callback => fn(evt)
-   * @option args Function   ontimeout            ontimeout callback => fn(evt)
-   *
-   * @return  void
-   *
-   * @api     OSjs.Utils.ajax()
+   * @param   {Object}     args                        Aguments (see below)
+   * @param   {String}     args.url                    The URL
+   * @param   {String}     [args.method=GET]           HTTP Call method
+   * @param   {Mixed}      [args.body]                 Body to send (for POST)
+   * @param   {integer}    [args.timeout=0]            Timeout (in milliseconds)
+   * @param   {String}     [args.responseType=null]    HTTP Response type
+   * @param   {Object}     [args.requestHeaders=null]  Tuple with headers
+   * @param   {Boolean}    [args.json=false]           Handle as a JSON request/response
+   * @param   {Boolean}    [args.jsonp=false]          Handle as a JSONP request
+   * @param   {Array}      [args.acceptcodes]          Array of accepted status codes for success signal [arraybuffer]
+   * @param   {Function}   [args.onerror]              onerror callback => fn(error, evt, request, url)
+   * @param   {Function}   [args.onsuccess]            onsuccess callback => fn(result, request, url)
+   * @param   {Function}   [args.oncreated]            oncreated callback => fn(request)
+   * @param   {Function}   [args.onfailed]             onfailed callback => fn(evt)
+   * @param   {Function}   [args.oncanceled]           oncanceled callback => fn(evt)
+   * @param   {Function}   [args.ontimeout]            ontimeout callback => fn(evt)
    */
   OSjs.Utils.ajax = function(args) {
     var request;
@@ -87,26 +82,33 @@
     function getResponse(ctype) {
       var response = request.responseText;
       if ( args.json && ctype.match(/^application\/json/) ) {
-        try {
-          response = JSON.parse(response);
-        } catch (ex) {
-          console.warn('Utils::ajax()', 'handleResponse()', ex);
-        }
+        response = JSON.parse(response);
       }
-
       return response;
     }
 
     function onReadyStateChange() {
+      var result;
+
+      function _onError(error) {
+        error = OSjs.API._('ERR_UTILS_XHR_FMT', error);
+        console.warn('Utils::ajax()', 'onReadyStateChange()', error);
+        args.onerror(error, result, request, args.url);
+      }
+
       if ( request.readyState === 4 ) {
-        var ctype = request.getResponseHeader('content-type') || '';
-        var result = getResponse(ctype);
+        try {
+          var ctype = request.getResponseHeader('content-type') || '';
+          result = getResponse(ctype);
+        } catch (ex) {
+          _onError(ex.toString());
+          return;
+        }
 
         if ( request.status === 200 || request.status === 201 ) {
           args.onsuccess(result, request, args.url);
         } else {
-          var error = OSjs.API._('ERR_UTILS_XHR_FMT', request.status.toString());
-          args.onerror(error, result, request, args.url);
+          _onError(request.status.toString());
         }
       }
     }
@@ -119,11 +121,15 @@
           args.onsuccess();
         }
       }, function() {
-        if ( loaded ) { return; }
+        if ( loaded ) {
+          return;
+        }
         loaded = true;
         args.onsuccess();
       }, function() {
-        if ( loaded ) { return; }
+        if ( loaded ) {
+          return;
+        }
         loaded = true;
         args.onerror();
       });
@@ -171,7 +177,7 @@
           if ( args.acceptcodes.indexOf(request.status) >= 0 ) {
             args.onsuccess(request.response, request, args.url);
           } else {
-            OSjs.VFS.abToText(request.response, 'text/plain', function(err, txt) {
+            OSjs.VFS.Helpers.abToText(request.response, 'text/plain', function(err, txt) {
               var error = txt || err || OSjs.API._('ERR_UTILS_XHR_FATAL');
               args.onerror(error, evt, request, args.url);
             });
@@ -222,7 +228,7 @@
   /**
    * Preload a list of resources
    *
-   * Format of list is:
+   * @example
    * [
    *  {
    *
@@ -231,13 +237,12 @@
    *  }
    * ]
    *
-   * @param   Array     list              The list of resources
-   * @param   Function  callback          Callback when done => fn(totalCount, failedArray, successArray)
-   * @param   Function  callbackProgress  Callback on progress => fn(currentNumber, totalNumber)
+   * @function preload
+   * @memberof OSjs.Utils
    *
-   * @return  void
-   *
-   * @api     OSjs.Utils.preload()
+   * @param   {Array}     list              The list of resources
+   * @param   {Function}  callback          Callback when done => fn(totalCount, failedArray, successArray)
+   * @param   {Function}  callbackProgress  Callback on progress => fn(currentNumber, totalNumber)
    */
   OSjs.Utils.preload = (function() {
     var _LOADED = {};
@@ -311,24 +316,61 @@
           _finished(true);
         }
       }, function() {
-        if ( loaded ) { return; }
+        if ( loaded ) {
+          return;
+        }
         loaded = true;
         _finished(true);
       }, function() {
-        if ( loaded ) { return; }
+        if ( loaded ) {
+          return;
+        }
         loaded = true;
         _finished(false);
       });
+    }
+
+    function checkType(item) {
+      if ( typeof item === 'string' ) {
+        item = {src: item};
+      }
+
+      if ( !item.type ) {
+        item.type = (function(src) {
+          if ( src.match(/\.js$/i) ) {
+            return 'javascript';
+          } else if ( src.match(/\.css$/i) ) {
+            return 'stylesheet';
+          }
+          return 'unknown';
+        })(item.src);
+      }
+
+      return item;
     }
 
     return function(list, callback, callbackProgress, args) {
       list = (list || []).slice();
       args = args || {};
 
-      var successes  = [];
-      var failed     = [];
+      var successes = [];
+      var failed = [];
 
-      console.group('Utils::preload()', list);
+      console.group('Utils::preload()', list.length);
+
+      function getSource(item) {
+        var src = item.src;
+        if ( src.substr(0, 1) !== '/' && !src.match(/^(https?|ftp)/) ) {
+          src = window.location.pathname + src;
+        }
+
+        if ( !src.match(/^(https?|ftp)/) && src.indexOf('?') === -1 ) {
+          if ( OSjs.API.getConfig('Connection.Dist') === 'dist' && OSjs.API.getConfig('Connection.AppendVersion') ) {
+            src += '?ver=' + OSjs.API.getConfig('Connection.AppendVersion');
+          }
+        }
+        return src;
+      }
 
       OSjs.Utils.asyncs(list, function(item, index, next) {
         function _loaded(success, src) {
@@ -338,24 +380,26 @@
         }
 
         if ( item ) {
+          item = checkType(item);
+
           if ( _LOADED[item.src] === true && (item.force !== true && args.force !== true) ) {
             _loaded(true);
             return;
           }
 
-          var src = item.src;
-          if ( src.substr(0, 1) !== '/' && !src.match(/^(https?|ftp)/) ) {
-            src = window.location.href + src;
-          }
-
+          var src = getSource(item);
           if ( item.type.match(/^style/) ) {
             createStyle(src, _loaded);
+            return;
           } else if ( item.type.match(/script$/) ) {
             createScript(src, _loaded);
+            return;
+          } else {
+            failed.push(src);
           }
-        } else {
-          next();
         }
+
+        next();
       }, function() {
         console.groupEnd();
         (callback || function() {})(list.length, failed, successes);

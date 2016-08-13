@@ -30,8 +30,25 @@
 (function(Utils, API, Window) {
   'use strict';
 
-  window.OSjs = window.OSjs || {};
-  OSjs.Core   = OSjs.Core   || {};
+  /**
+   * A callback for Dialogs.
+   *
+   * <pre>
+   * The list of included buttons are: ok, cancel, yes, no
+   * depending on which dialog was called.
+   *
+   * The result also depends on which dialog was called.
+   *
+   * The default button is 'cancel' if window was closed.
+   *
+   * You only get an event back if an actual button was pressed.
+   * </pre>
+   *
+   * @callback CallbackDialog
+   * @param {Event}   ev      Browser event that occured from action
+   * @param {String}  button  Which button that was clicked
+   * @param {Mixed}   result  Result from dialog input
+   */
 
   /////////////////////////////////////////////////////////////////////////////
   // DIALOG
@@ -42,10 +59,17 @@
    *
    * A simple wrapper with some pre-defined options
    *
-   * @see OSjs.Core.Window
-   * @api OSjs.Core.DialogWindow
-   * @class DialogWindow
-   * @extends Window
+   * <pre><b>
+   * YOU CANNOT CANNOT USE THIS VIA 'new' KEYWORD.
+   * </b></pre>
+   *
+   * @summary Class used for basis as a Dialog.
+   *
+   * @abstract
+   * @constructor
+   * @memberof OSjs.Core
+   * @extends OSjs.Core.Window
+   * @see OSjs.API.createDialog
    */
   function DialogWindow(className, opts, args, callback) {
     var self = this;
@@ -96,6 +120,11 @@
   DialogWindow.prototype = Object.create(Window.prototype);
   DialogWindow.constructor = Window;
 
+  /**
+   * @override
+   * @function init
+   * @memberof OSjs.Core.DialogWindow#
+   */
   DialogWindow.prototype.init = function() {
     var self = this;
 
@@ -138,10 +167,21 @@
     return root;
   };
 
+  /**
+   * When dialog closes
+   *
+   * @function onClose
+   * @memberof OSjs.Core.DialogWindow#
+   */
   DialogWindow.prototype.onClose = function(ev, button) {
     this.closeCallback(ev, button, null);
   };
 
+  /**
+   * @override
+   * @function _close
+   * @memberof OSjs.Core.DialogWindow#
+   */
   DialogWindow.prototype._close = function() {
     if ( !this.buttonClicked ) {
       this.onClose(null, 'cancel', null);
@@ -149,12 +189,38 @@
     return Window.prototype._close.apply(this, arguments);
   };
 
+  /**
+   * @override
+   * @function _onKeyEvent
+   * @memberof OSjs.Core.DialogWindow#
+   */
   DialogWindow.prototype._onKeyEvent = function(ev) {
     Window.prototype._onKeyEvent.apply(this, arguments);
 
     if ( ev.keyCode === Utils.Keys.ESC ) {
       this.onClose(ev, 'cancel');
     }
+  };
+
+  /**
+   * Parses given message to be inserted into Dialog
+   *
+   * @function parseMessage
+   * @memberof OSjs.Core.DialogWindow
+   */
+  DialogWindow.parseMessage = function(msg) {
+    msg = Utils.$escape(msg || '').replace(/\*\*(.*)\*\*/g, '<span>$1</span>');
+
+    var tmp = document.createElement('div');
+    tmp.innerHTML = msg;
+
+    var frag = document.createDocumentFragment();
+    for ( var i = 0; i < tmp.childNodes.length; i++ ) {
+      frag.appendChild(tmp.childNodes[i].cloneNode(true));
+    }
+    tmp = null;
+
+    return frag;
   };
 
   /////////////////////////////////////////////////////////////////////////////

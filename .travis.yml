@@ -1,11 +1,13 @@
 language: node_js
 node_js:
   - "0.12"
+  - 6
+  - 5
 branches:
   only:
     - master
 before_script:
-  - npm install mocha -g
+  - npm install mocha
   - npm install grunt-cli -g
   - grunt config manifest dist-files
 after_success:

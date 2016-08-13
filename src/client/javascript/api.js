@@ -27,15 +27,17 @@
  * @author  Anders Evenrud <andersevenrud@gmail.com>
  * @licence Simplified BSD License
  */
-(function() {
+(function(Utils, API) {
   'use strict';
+
+  /**
+   * @namespace API
+   * @memberof OSjs
+   */
 
   /*@
    * Please note that there are some more methods defined in `process.js`
    */
-
-  window.OSjs       = window.OSjs       || {};
-  OSjs.API          = OSjs.API          || {};
 
   var DefaultLocale = 'en_EN';
   var CurrentLocale = 'en_EN';
@@ -48,11 +50,11 @@
     'onInited':              [],
     'onWMInited':            [],
     'onSessionLoaded':       [],
-    'onLogout':              [],
     'onShutdown':            [],
     'onApplicationPreload':  [],
     'onApplicationLaunch':   [],
-    'onApplicationLaunched': []
+    'onApplicationLaunched': [],
+    'onBlurMenu':            []
   };
 
   /////////////////////////////////////////////////////////////////////////////
@@ -64,9 +66,6 @@
    *
    * This is a private class and can only be retrieved through
    * OSjs.API.getServiceNotificationIcon()
-   *
-   * @see OSjs.API.getServiceNotificationIcon()
-   * @class
    */
   function ServiceNotificationIcon() {
     this.entries = {};
@@ -101,9 +100,6 @@
 
   /**
    * Destroys the notification icon
-   *
-   * @return  void
-   * @method  ServiceNotificationIcon::destroy()
    */
   ServiceNotificationIcon.prototype.destroy = function() {
     var wm = OSjs.Core.getWindowManager();
@@ -118,7 +114,9 @@
 
   ServiceNotificationIcon.prototype._updateIcon = function() {
     if ( this.notif ) {
-      this.notif.$container.style.display = this.size ? 'inline-block' : 'none';
+      if ( this.notif.$container ) {
+        this.notif.$container.style.display = this.size ? 'inline-block' : 'none';
+      }
       this.notif.setTitle(OSjs.API._('SERVICENOTIFICATION_TOOLTIP', this.size.toString()));
     }
   };
@@ -127,9 +125,6 @@
    * Show the menu
    *
    * @param   DOMEvent      ev      Event
-   *
-   * @return  void
-   * @method  ServiceNotificationIcon::displayMenu()
    */
   ServiceNotificationIcon.prototype.displayMenu = function(ev) {
     var menu = [];
@@ -147,13 +142,6 @@
 
   /**
    * Adds an entry
-   *
-   * @param   String      name      Name (unique)
-   * @param   Array       menu      Menu
-   *
-   * @see     OSjs.GUI.Menu
-   * @return  void
-   * @method  ServiceNotificationIcon::add()
    */
   ServiceNotificationIcon.prototype.add = function(name, menu) {
     if ( !this.entries[name] ) {
@@ -166,11 +154,6 @@
 
   /**
    * Removes an entry
-   *
-   * @param   String      name      Name (unique)
-   *
-   * @return  void
-   * @method  ServiceNotificationIcon::remove()
    */
   ServiceNotificationIcon.prototype.remove = function(name) {
     if ( this.entries[name] ) {
@@ -186,13 +169,16 @@
 
   /**
    * Translate given string
-   * @param  String   s     Translation key/string
-   * @param  Mixed    ...   Format values
    *
-   * @return String
-   * @api    OSjs.API._()
+   * @function _
+   * @memberof OSjs.API
+   *
+   * @param  {String}       s       Translation key/string
+   * @param  {...String}    sargs   Format values
+   *
+   * @return {String}
    */
-  function doTranslate() {
+  API._ = function _apiTranslate() {
     var s = arguments[0];
     var a = arguments;
 
@@ -202,15 +188,17 @@
       a[0] = OSjs.Locales[DefaultLocale][s] || s;
     }
 
-    return a.length > 1 ? OSjs.Utils.format.apply(null, a) : a[0];
-  }
+    return a.length > 1 ? Utils.format.apply(null, a) : a[0];
+  };
 
   /**
    * Same as _ only you can supply the list as first argument
-   * @see    OSjs.API._()
-   * @api    OSjs.API.__()
+   *
+   * @function __
+   * @memberof OSjs.API
+   * @see OSjs.API._
    */
-  function doTranslateList() {
+  API.__ = function _apiTranslateList() {
     var l = arguments[0];
     var s = arguments[1];
     var a = Array.prototype.slice.call(arguments, 1);
@@ -220,36 +208,38 @@
     } else {
       a[0] = l[DefaultLocale] ? (l[DefaultLocale][s] || s) : s;
       if ( a[0] && a[0] === s ) {
-        a[0] = doTranslate.apply(null, a);
+        a[0] = API._.apply(null, a);
       }
     }
 
-    return a.length > 1 ? OSjs.Utils.format.apply(null, a) : a[0];
-  }
+    return a.length > 1 ? Utils.format.apply(null, a) : a[0];
+  };
 
   /**
    * Get current locale
    *
-   * @return String
-   * @api    OSjs.API.getLocale()
+   * @function getLocale
+   * @memberof OSjs.API
+   *
+   * @return {String}
    */
-  function doGetLocale() {
+  API.getLocale = function _apiGetLocale() {
     return CurrentLocale;
-  }
+  };
 
   /**
    * Set locale
    *
-   * @param  String   s     Locale name
+   * @function setLocale
+   * @memberof OSjs.API
    *
-   * @return void
-   * @api    OSjs.API.setLocale()
+   * @param  {String}   s     Locale name
    */
-  function doSetLocale(l) {
+  API.setLocale = function _apiSetLocale(l) {
     if ( OSjs.Locales[l] ) {
       CurrentLocale = l;
     } else {
-      console.warn('doSetLocale()', 'Invalid locale', l, '(Using default)');
+      console.warn('API::setLocale()', 'Invalid locale', l, '(Using default)');
       CurrentLocale = DefaultLocale;
     }
 
@@ -258,8 +248,8 @@
       html.setAttribute('lang', l);
     }
 
-    console.log('doSetLocale()', CurrentLocale);
-  }
+    console.info('API::setLocale()', CurrentLocale);
+  };
 
   /////////////////////////////////////////////////////////////////////////////
   // REQUEST API METHODS
@@ -270,15 +260,16 @@
    *
    * The response is in form of: {httpCode, body}
    *
-   * @param   Object    args      cURL Arguments (see docs)
-   * @param   Function  callback  Callback function => fn(error, response)
+   * @function curl
+   * @memberof OSjs.API
    *
-   * @return  void
-   * @link    https://os.js.org/doc/tutorials/using-curl.html
-   * @link    https://os.js.org/doc/server/srcservernodenode_modulesosjsapijs.html#api-curl
-   * @api     OSjs.API.curl()
+   * @param   {Object}    args      cURL Arguments (see docs)
+   * @param   {Function}  callback  Callback function => fn(error, response)
+   *
+   * @link https://os.js.org/doc/tutorials/using-curl.html
+   * @link https://os.js.org/doc/server/srcservernodenode_modulesosjsapijs.html#api-curl
    */
-  function doCurl(args, callback) {
+  API.curl = function _apiCurl(args, callback) {
     args = args || {};
     callback = callback || {};
 
@@ -289,33 +280,33 @@
       opts = args;
     }
 
-    doAPICall('curl', opts, callback, args.options);
-  }
+    API.call('curl', opts, callback, args.options);
+  };
 
   /**
    * Global function for calling API (backend)
    *
    * You can call VFS functions by prefixing your method name with "FS:"
    *
-   * @param   String    m       Method name
-   * @param   Object    a       Method arguments
-   * @param   Function  cb      Callback on success => fn(err, res)
-   * @param   Object    options (Optional) Options to send to the XHR request
+   * @function call
+   * @memberof OSjs.API
+   * @see OSjs.Core.Handler#callAPI
+   * @see OSjs.Utils.ajax
+   * @throws {Error} On invalid arguments
    *
-   * @see     OSjs.Core.Handler.callAPI()
-   * @see     OSjs.Utils.ajax()
-   *
-   * @return  void
-   * @api     OSjs.API.call()
+   * @param   {String}    m         Method name
+   * @param   {Object}    a         Method arguments
+   * @param   {Function}  cb        Callback on success => fn(err, res)
+   * @param   {Object}    [options] Options to send to the XHR request
    */
   var _CALL_INDEX = 1;
-  function doAPICall(m, a, cb, options) {
+  API.call = function _apiCall(m, a, cb, options) {
     a = a || {};
 
     var lname = 'APICall_' + _CALL_INDEX;
 
     if ( typeof a.__loading === 'undefined' || a.__loading === true ) {
-      createLoading(lname, {className: 'BusyNotification', tooltip: 'API Call'});
+      API.createLoading(lname, {className: 'BusyNotification', tooltip: 'API Call'});
     }
 
     if ( typeof cb !== 'function' ) {
@@ -330,13 +321,13 @@
 
     var handler = OSjs.Core.getHandler();
     return handler.callAPI(m, a, function(response) {
-      destroyLoading(lname);
+      API.destroyLoading(lname);
       response = response || {};
       cb(response.error || false, response.result);
     }, function(err) {
       cb(err);
     }, options);
-  }
+  };
 
   /////////////////////////////////////////////////////////////////////////////
   // PROCESS API METHODS
@@ -345,17 +336,25 @@
   /**
    * Open a file
    *
-   * @param   OSjs.VFS.File   file          The File reference (can also be a tuple with 'path' and 'mime')
-   * @param   Object          launchArgs    Arguments to send to process launch function
-   * @see     doLaunchProcess
+   * @function open
+   * @memberof OSjs.API
+   * @see OSjs.API.launch
+   * @throws {Error} On invalid arguments
    *
-   * @return  void
-   * @api     OSjs.API.open()
+   * @param   {OSjs.VFS.File}   file          The File reference (can also be a tuple with 'path' and 'mime')
+   * @param   {Object}          launchArgs    Arguments to send to process launch function
    */
-  function doLaunchFile(file, launchArgs) {
+  API.open = function _apiOpen(file, launchArgs) {
     launchArgs = launchArgs || {};
-    if ( !file.path ) { throw new Error('Cannot doLaunchFile() without a path'); }
-    if ( !file.mime )  { throw new Error('Cannot doLaunchFile() without a mime type'); }
+
+    if ( !file.path ) {
+      throw new Error('Cannot API::open() without a path');
+    }
+
+    var settingsManager = OSjs.Core.getSettingsManager();
+    var wm = OSjs.Core.getWindowManager();
+    var handler = OSjs.Core.getHandler();
+    var args = {file: file};
 
     function getApplicationNameByFile(file, forceList, callback) {
       if ( !(file instanceof OSjs.VFS.File) ) {
@@ -363,7 +362,7 @@
       }
 
       var pacman = OSjs.Core.getPackageManager();
-      var val = OSjs.Core.getSettingsManager().get('DefaultApplication', file.mime);
+      var val = settingsManager.get('DefaultApplication', file.mime);
 
       console.debug('getApplicationNameByFile()', 'default application', val);
       if ( !forceList && val ) {
@@ -375,23 +374,11 @@
       callback(pacman.getPackagesByMime(file.mime));
     }
 
-    var wm = OSjs.Core.getWindowManager();
-    var handler = OSjs.Core.getHandler();
-    var args = {file: file};
-
-    if ( launchArgs.args ) {
-      Object.keys(launchArgs.args).forEach(function(i) {
-        args[i] = launchArgs.args[i];
-      });
-    }
-
-    console.group('doLaunchFile()', file);
-
     function setDefaultApplication(mime, app, callback) {
       callback = callback || function() {};
       console.debug('setDefaultApplication()', mime, app);
-      OSjs.Core.getSettingsManager().set('DefaultApplication', mime, app);
-      OSjs.Core.getSettingsManager().save('DefaultApplication', callback);
+      settingsManager.set('DefaultApplication', mime, app);
+      settingsManager.save('DefaultApplication', callback);
     }
 
     function _launch(name) {
@@ -400,8 +387,13 @@
       }
     }
 
+    function _launchApp(name, ar) {
+      console.groupEnd();
+      API.launch(name, ar);
+    }
+
     function _onDone(app) {
-      console.info('Found', app.length, 'applications supporting this mime');
+      console.debug('Found', app.length, 'applications supporting this mime');
       console.groupEnd();
       if ( app.length ) {
 
@@ -413,7 +405,10 @@
               file: file,
               list: app
             }, function(ev, btn, result) {
-              if ( btn !== 'ok' ) { return; }
+              if ( btn !== 'ok' ) {
+                return;
+              }
+
               _launch(result.name);
 
               setDefaultApplication(file.mime, result.useDefault ? result.name : null);
@@ -431,25 +426,35 @@
       }
     }
 
-    if ( file.mime === 'osjs/application' ) {
-      doLaunchProcess(OSjs.Utils.filename(file.path));
-      return;
-    }
+    console.group('API::open()', file);
 
-    getApplicationNameByFile(file, launchArgs.forceList, _onDone);
-  }
+    if ( file.mime === 'osjs/application' ) {
+      _launchApp(Utils.filename(file.path), {});
+    } else if ( file.type === 'dir' ) {
+      var fm = settingsManager.instance('DefaultApplication').get('dir', 'ApplicationFileManager');
+      _launchApp(fm, {path: file.path});
+    } else {
+      if ( launchArgs.args ) {
+        Object.keys(launchArgs.args).forEach(function(i) {
+          args[i] = launchArgs.args[i];
+        });
+      }
+
+      getApplicationNameByFile(file, launchArgs.forceList, _onDone);
+    }
+  };
 
   /**
    * Restarts all processes with the given name
    *
    * This also reloads any metadata preload items defined in the application.
    *
-   * @param   String      n               Application Name
+   * @function relaunch
+   * @memberof OSjs.API
    *
-   * @return  void
-   * @api     OSjs.API.relaunch()
+   * @param   {String}      n               Application Name
    */
-  function doReLaunchProcess(n) {
+  API.relaunch = function _apiRelaunch(n) {
     function relaunch(p) {
       var data = null;
       var args = {};
@@ -458,7 +463,7 @@
       }
 
       try {
-        p.destroy(true); // kill
+        p.destroy(); // kill
       } catch ( e ) {
         console.warn('OSjs.API.relaunch()', e.stack, e);
       }
@@ -471,54 +476,47 @@
 
       args.__preload__ = {force: true};
 
-      OSjs.API.launch(n, args);
+      //setTimeout with 500 ms is used to allow applications that might need
+      //  some time to destroy resources before it can be relaunched.
+      setTimeout(function() {
+        OSjs.API.launch(n, args);
+      }, 500);
     }
 
     OSjs.API.getProcess(n).forEach(relaunch);
-  }
+  };
 
   /**
    * Launch a Process
    *
-   * @param   String      n               Application Name
-   * @param   Object      arg             Launch arguments
-   * @param   Function    onFinished      Callback on success
-   * @param   Function    onError         Callback on error
-   * @param   Function    onConstructed   Callback on application init
+   * @function launch
+   * @memberof OSjs.API
    *
-   * @return  bool
-   * @api     OSjs.API.launch()
+   * @param   {String}      name          Application Name
+   * @param   {Object}      [args]          Launch arguments
+   * @param   {Function}    [ondone]        Callback on success
+   * @param   {Function}    [onerror]       Callback on error
+   * @param   {Function}    [onconstruct]   Callback on application init
+   *
+   * @return  {Boolean}
    */
-  function doLaunchProcess(n, arg, onFinished, onError, onConstructed) {
-    arg           = arg           || {};
-    onFinished    = onFinished    || function() {};
-    onError       = onError       || function() {};
-    onConstructed = onConstructed || function() {};
+  API.launch = function _apiLaunch(name, args, ondone, onerror, onconstruct) {
+    args = args || {};
 
-    if ( !n ) { throw new Error('Cannot doLaunchProcess() witout a application name'); }
+    var err;
 
     var splash = null;
+    var instance = null;
     var pargs = {};
+
     var handler = OSjs.Core.getHandler();
     var packman = OSjs.Core.getPackageManager();
-    var compability = OSjs.Utils.getCompability();
+    var compability = Utils.getCompability();
+    var metadata = packman.getPackage(name);
+    var running = OSjs.API.getProcess(name, true);
 
-    function checkApplicationCompability(comp) {
-      var result = [];
-      if ( typeof comp !== 'undefined' && (comp instanceof Array) ) {
-        comp.forEach(function(c, i) {
-          if ( typeof compability[c] !== 'undefined' ) {
-            if ( !compability[c] ) {
-              result.push(c);
-            }
-          }
-        });
-      }
-      return result;
-    }
-
-    function getPreloads(data) {
-      var preload = (data.preload || []).slice(0);
+    var preloads = (function() {
+      var list = (metadata.preload || []).slice(0);
       var additions = [];
 
       function _add(chk) {
@@ -529,8 +527,10 @@
         }
       }
 
-      if ( data.depends && data.depends instanceof Array ) {
-        data.depends.forEach(function(k) {
+      // If this package depends on another package, make sure
+      // to load the resources for the related one as well
+      if ( metadata.depends instanceof Array ) {
+        metadata.depends.forEach(function(k) {
           if ( !OSjs.Applications[k] ) {
             console.info('Using dependency', k);
             _add(packman.getPackage(k));
@@ -538,20 +538,23 @@
         });
       }
 
+      // ... same goes for packages that uses this package
+      // as a dependency.
       var pkgs = packman.getPackages(false);
       Object.keys(pkgs).forEach(function(pn) {
         var p = pkgs[pn];
-        if ( p.type === 'extension' && p.uses === n ) {
+        if ( p.type === 'extension' && p.uses === name ) {
           console.info('Using extension', pn);
           _add(p);
         }
       });
 
-      preload = additions.concat(preload);
+      list = additions.concat(list);
       additions = [];
 
-      if ( data.scope === 'user' ) {
-        preload = preload.map(function(p) {
+      // For user packages, make sure to load the correct URL
+      if ( metadata.scope === 'user' ) {
+        list = list.map(function(p) {
           if ( p.src.substr(0, 1) !== '/' && !p.src.match(/^(https?|ftp)/) ) {
             OSjs.VFS.url(p.src, function(error, url) {
               if ( !error ) {
@@ -564,57 +567,114 @@
         });
       }
 
-      return preload;
+      return list;
+    })();
+
+    function _createSplash() {
+      API.createLoading(name, {className: 'StartupNotification', tooltip: 'Starting ' + name});
+      if ( !OSjs.Applications[name] ) {
+        if ( metadata.splash !== false ) {
+          splash = OSjs.API.createSplash(metadata.name, metadata.icon);
+        }
+      }
     }
 
-    function _done() {
+    function _destroySplash() {
+      API.destroyLoading(name);
       if ( splash ) {
         splash.destroy();
         splash = null;
       }
     }
 
-    function _error(msg, exception) {
-      _done();
-      console.groupEnd(); // !!!
-      OSjs.API.error(OSjs.API._('ERR_APP_LAUNCH_FAILED'),
-                  OSjs.API._('ERR_APP_LAUNCH_FAILED_FMT', n),
-                  msg, exception, true);
+    function _onError(err, exception) {
+      _destroySplash();
 
-      onError(msg, n, arg, exception);
+      OSjs.API.error(OSjs.API._('ERR_APP_LAUNCH_FAILED'),
+                  OSjs.API._('ERR_APP_LAUNCH_FAILED_FMT', name),
+                  err, exception, true);
+
+      console.groupEnd();
+
+      (onerror || function() {})(err, name, args, exception);
     }
 
-    function _checkSingular(result) {
-      var singular = (typeof result.singular === 'undefined') ? false : (result.singular === true);
-      if ( singular ) {
-        var sproc = OSjs.API.getProcess(n, true);
-        if ( sproc ) {
-          console.debug('doLaunchProcess()', 'detected that this application is a singular and already running...');
-          if ( sproc instanceof OSjs.Core.Application ) {
-            sproc._onMessage(null, 'attention', arg);
-          } else {
-            _error(OSjs.API._('ERR_APP_LAUNCH_ALREADY_RUNNING_FMT', n));
+    function _onFinished(skip) {
+      _destroySplash();
+
+      console.groupEnd();
+
+      (ondone || function() {})(instance, metadata);
+    }
+
+    function _preLaunch(cb) {
+      var isCompatible = (function() {
+        var list = (metadata.compability || []).filter(function(c) {
+          if ( typeof compability[c] !== 'undefined' ) {
+            return !compability[c];
           }
-          console.groupEnd();
-          return true;
+          return false;
+        });
+
+        if ( list.length ) {
+          return OSjs.API._('ERR_APP_LAUNCH_COMPABILITY_FAILED_FMT', name, list.join(', '));
+        }
+        return true;
+      })();
+
+      if ( isCompatible !== true ) {
+        throw new Error(isCompatible);
+      }
+
+      if ( metadata.singular === true && running ) {
+        if ( running instanceof OSjs.Core.Application ) {
+          // In this case we do not trigger an error. Applications simply get a signal for attention
+          console.warn('API::launch()', 'detected that this application is a singular and already running...');
+          running._onMessage('attention', args);
+          _onFinished(true);
+          return; // muy importante!
+        } else {
+          throw new Error(OSjs.API._('ERR_APP_LAUNCH_ALREADY_RUNNING_FMT', name));
         }
       }
-      return false;
+
+      Utils.asyncs(_hooks.onApplicationPreload, function(qi, i, n) {
+        qi(name, args, preloads, function(p) {
+          if ( p && (p instanceof Array) ) {
+            preloads = p;
+          }
+          n();
+        });
+      }, function() {
+        _createSplash();
+        cb();
+      });
+
+      API.triggerHook('onApplicationLaunch', [name, args]);
     }
 
-    function _createInstance(result) {
-      var a = null;
-      try {
-        a = new OSjs.Applications[n].Class(arg, result);
-        onConstructed(a, result);
-      } catch ( e ) {
-        console.warn('Error on constructing application', e, e.stack);
-        _error(OSjs.API._('ERR_APP_CONSTRUCT_FAILED_FMT', n, e), e);
+    function _preload(cb) {
+      Utils.preload(preloads, function(total, failed) {
+        if ( failed.length ) {
+          cb(OSjs.API._('ERR_APP_PRELOAD_FAILED_FMT', name, failed.join(',')));
+        } else {
+          setTimeout(function() {
+            cb(false);
+          }, 0);
+        }
+      }, function(progress, count) {
+        if ( splash ) {
+          splash.update(progress, count);
+        }
+      }, pargs);
+    }
 
-        if ( a ) {
+    function _createProcess(cb) {
+      function __onprocessinitfailed() {
+        if ( instance ) {
           try {
-            a.destroy();
-            a = null;
+            instance.destroy();
+            instance = null;
           } catch ( ee ) {
             console.warn('Something awful happened when trying to clean up failed launch Oo', ee);
             console.warn(ee.stack);
@@ -622,146 +682,121 @@
         }
       }
 
-      return a;
-    }
-
-    function _callback(result) {
-      if ( typeof OSjs.Applications[n] === 'undefined' ) {
-        _error(OSjs.API._('ERR_APP_RESOURCES_MISSING_FMT', n));
-        return;
+      if ( typeof OSjs.Applications[name] === 'undefined' ) {
+        throw new Error(OSjs.API._('ERR_APP_RESOURCES_MISSING_FMT', name));
       }
 
-      if ( typeof OSjs.Applications[n] === 'function' ) {
-        OSjs.Applications[n]();
-        _done();
+      if ( typeof OSjs.Applications[name] === 'function' ) {
+        OSjs.Applications[name]();
+        cb(false, true);
         return;
       }
-
-      // Only allow one instance if specified
-      if ( _checkSingular(result) ) {
-        _done();
-        return;
-      }
-
-      // Create instance and restore settings
-      var a = _createInstance(result);
 
       try {
-        var settings = OSjs.Core.getSettingsManager().get(a.__pname) || {};
-        a.init(settings, result, function() {}); // NOTE: Empty function is for backward-compability
-        onFinished(a, result);
+        instance = new OSjs.Applications[name].Class(args, metadata);
 
-        doTriggerHook('onApplicationLaunched', [{
-          application: a,
-          name: n,
-          args: arg,
+        (onconstruct || function() {})(instance, metadata);
+      } catch ( e ) {
+        console.warn('Error on constructing application', e, e.stack);
+        __onprocessinitfailed();
+        cb(OSjs.API._('ERR_APP_CONSTRUCT_FAILED_FMT', name, e), e);
+        return;
+      }
+
+      try {
+        var settings = OSjs.Core.getSettingsManager().get(instance.__pname) || {};
+        instance.init(settings, metadata, function() {}); // NOTE: Empty function is for backward-compability
+
+        API.triggerHook('onApplicationLaunched', [{
+          application: instance,
+          name: name,
+          args: args,
           settings: settings,
-          metadata: result
+          metadata: metadata
         }]);
-
-        console.groupEnd();
       } catch ( ex ) {
         console.warn('Error on init() application', ex, ex.stack);
-        _error(OSjs.API._('ERR_APP_INIT_FAILED_FMT', n, ex.toString()), ex);
+        __onprocessinitfailed();
+        cb(OSjs.API._('ERR_APP_INIT_FAILED_FMT', name, ex.toString()), ex);
+        return;
       }
 
-      _done();
+      cb(false, true);
     }
 
-    function launch() {
-      doTriggerHook('onApplicationLaunch', [n, arg]);
+    if ( !name ) {
+      err = 'Cannot API::launch() witout a application name';
+      _onError(err);
+      throw new Error(err);
+    }
 
-      // Get metadata and check compability
-      var data = packman.getPackage(n);
-      if ( !data ) {
-        _error(OSjs.API._('ERR_APP_LAUNCH_MANIFEST_FAILED_FMT', n));
-        return false;
-      }
-      var nosupport = checkApplicationCompability(data.compability);
-      if ( nosupport.length ) {
-        _error(OSjs.API._('ERR_APP_LAUNCH_COMPABILITY_FAILED_FMT', n, nosupport.join(', ')));
-        return false;
-      }
+    if ( !metadata ) {
+      err = OSjs.API._('ERR_APP_LAUNCH_MANIFEST_FAILED_FMT', name);
+      _onError(err);
+      throw new Error(err);
+    }
 
-      if ( arg.__preload__ ) {
-        pargs = arg.__preload__;
-        delete arg.__preload__;
-      }
+    console.group('API::launch()', {
+      name: name,
+      args: args,
+      metadata: metadata,
+      preloads: preloads
+    });
 
-      if ( !OSjs.Applications[n] ) {
-        if ( data.splash !== false ) {
-          splash = OSjs.API.createSplash(data.name, data.icon);
-        }
-      }
+    if ( args.__preload__ ) { // This is for relaunch()
+      pargs = args.__preload__;
+      delete args.__preload__;
+    }
 
-      console.info('Manifest', data);
-
-      // Preload
-      createLoading(n, {className: 'StartupNotification', tooltip: 'Starting ' + n});
-
-      var preload = getPreloads(data);
-
-      function _onLaunchPreload() {
-
-        OSjs.Utils.preload(preload, function(total, failed) {
-          destroyLoading(n);
-
-          if ( failed.length ) {
-            _error(OSjs.API._('ERR_APP_PRELOAD_FAILED_FMT', n, failed.join(',')));
-            return;
+    // Main blob
+    try {
+      _preLaunch(function() {
+        _preload(function(err, res) {
+          if ( err ) {
+            _onError(err, res);
+          } else {
+            try {
+              _createProcess(function(err, res) {
+                if ( err ) {
+                  _onError(err, res);
+                } else {
+                  try {
+                    _onFinished(res);
+                  } catch ( e ) {
+                    _onError(e.toString(), e);
+                  }
+                }
+              });
+            } catch ( e ) {
+              _onError(e.toString(), e);
+            }
           }
-
-          setTimeout(function() {
-            _callback(data);
-          }, 0);
-        }, function(progress, count) {
-          if ( splash ) {
-            splash.update(progress, count);
-          }
-        }, pargs);
-      }
-
-      OSjs.Utils.asyncs(_hooks.onApplicationPreload, function(qi, i, n) {
-        qi(n, arg, preload, function(p) {
-          if ( p && (p instanceof Array) ) {
-            preload = p;
-          }
-
-          n();
         });
-      }, function() {
-        _onLaunchPreload();
       });
-
-      doTriggerHook('onApplicationLaunch', [n, arg]);
-
-      return true;
+    } catch ( e ) {
+      _onError(e.toString());
     }
-
-    console.group('doLaunchProcess()', n);
-    console.info('Arguments', arg);
-
-    return launch();
-  }
+  };
 
   /**
    * Launch Processes from a List
    *
-   * @param   Array         list        List of launch application arguments
-   * @param   Function      onSuccess   Callback on success => fn(app, metadata, appName, appArgs)
-   * @param   Function      onError     Callback on error => fn(error, appName, appArgs)
-   * @param   Function      onFinished  Callback on finished running => fn()
-   * @see     doLaunchProcess
-   * @return  void
-   * @api     OSjs.API.launchList()
+   * @function launchList
+   * @memberof OSjs.API
+   * @see OSjs.API.launch
+   *
+   * @param   {Array}         list        List of launch application arguments
+   * @param   {Function}      onSuccess   Callback on success => fn(app, metadata, appName, appArgs)
+   * @param   {Function}      onError     Callback on error => fn(error, appName, appArgs)
+   * @param   {Function}      onFinished  Callback on finished running => fn()
    */
-  function doLaunchProcessList(list, onSuccess, onError, onFinished) {
+  API.launchList = function _apiLaunchList(list, onSuccess, onError, onFinished) {
     list        = list        || []; /* idx => {name: 'string', args: 'object', data: 'mixed, optional'} */
     onSuccess   = onSuccess   || function() {};
     onError     = onError     || function() {};
     onFinished  = onFinished  || function() {};
 
-    OSjs.Utils.asyncs(list, function(s, current, next) {
+    Utils.asyncs(list, function(s, current, next) {
       if ( typeof s === 'string' ) {
         var args = {};
         var spl = s.split('@');
@@ -782,7 +817,7 @@
       var aargs = (typeof s.args === 'undefined') ? {} : (s.args || {});
 
       if ( !aname ) {
-        console.warn('doLaunchProcessList() next()', 'No application name defined');
+        console.warn('API::launchList() next()', 'No application name defined');
         next();
         return;
       }
@@ -791,12 +826,12 @@
         onSuccess(app, metadata, aname, aargs);
         next();
       }, function(err, name, args) {
-        console.warn('doLaunchProcessList() _onError()', err);
+        console.warn('API::launchList() _onError()', err);
         onError(err, name, args);
         next();
       });
     }, onFinished);
-  }
+  };
 
   /////////////////////////////////////////////////////////////////////////////
   // RESOURCE API METHODS
@@ -805,16 +840,16 @@
   /**
    * Get a resource from application
    *
-   * @param   Process   app     Application instance reference
-   *                            You can also specify a name by String
-   * @param   String    name    Resource Name
-   * @param   boolean   vfspath Return a valid VFS path
+   * @function getApplicationResource
+   * @memberof OSjs.API
    *
-   * @return  String            The absolute URL of resource
+   * @param   {OSjs.Core.Process}   app     Application instance reference. You can also specify a name by String
+   * @param   {String}              name    Resource Name
+   * @param   {Boolean}             vfspath Return a valid VFS path
    *
-   * @api     OSjs.API.getApplicationResource()
+   * @return  {String}            The absolute URL of resource
    */
-  function doGetApplicationResource(app, name, vfspath) {
+  API.getApplicationResource = function _apiGetAppResource(app, name, vfspath) {
     if ( name.match(/^\//) ) {
       return name;
     }
@@ -839,7 +874,7 @@
     }
 
     function getResultPath(path, userpkg) {
-      path = OSjs.Utils.checkdir(path);
+      path = Utils.checkdir(path);
 
       if ( vfspath ) {
         if ( userpkg ) {
@@ -864,7 +899,7 @@
         } else {
           root = OSjs.API.getConfig('Connection.FSURI');
           sub = OSjs.API.getConfig('PackageManager.UserPackages');
-          path = root + OSjs.Utils.pathJoin(sub, appname, name);
+          path = root + '/get/' + Utils.pathJoin(sub, appname, name);
         }
       }
 
@@ -872,40 +907,41 @@
     }
 
     return getResourcePath();
-  }
+  };
 
   /**
    * Get path to css theme
    *
-   * @param   String    name    CSS Stylesheet name (without extension)
+   * @function getThemeCSS
+   * @memberof OSjs.API
    *
-   * @return  String            The absolute URL of css file
+   * @param   {String}    name    CSS Stylesheet name (without extension)
    *
-   * @api     OSjs.API.getThemeCSS()
+   * @return  {String}            The absolute URL of css file
    */
-  function doGetThemeCSS(name) {
+  API.getThemeCSS = function _apiGetThemeCSS(name) {
     var root = OSjs.API.getConfig('Connection.RootURI', '/');
     if ( name === null ) {
       return root + 'blank.css';
     }
 
     root = OSjs.API.getConfig('Connection.ThemeURI');
-    return OSjs.Utils.checkdir(root + '/' + name + '.css');
-  }
+    return Utils.checkdir(root + '/' + name + '.css');
+  };
 
   /**
    * Get a icon based in file and mime
    *
-   * @param   [File]    file    File Data (see supported types)
-   * @param   String    size    (Optional) Icon size (default="16x16")
-   * @param   String    icon    (Optional) Default icon
+   * @function getFileIcon
+   * @memberof OSjs.API
    *
-   * @return  String            The absolute URL to the icon
+   * @param   {File}      file            File Data (see supported types)
+   * @param   {String}    [size=16x16]    Icon size
+   * @param   {String}    [icon]          Default icon
    *
-   * @see     vfs.js
-   * @api     OSjs.API.getFileIcon()
+   * @return  {String}            The absolute URL to the icon
    */
-  function doGetFileIcon(file, size, icon) {
+  API.getFileIcon = function _apiGetFileIcon(file, size, icon) {
     icon = icon || 'mimetypes/gnome-fs-regular.png';
 
     if ( typeof file === 'object' && !(file instanceof OSjs.VFS.File) ) {
@@ -961,23 +997,27 @@
     }
 
     return OSjs.API.getIcon(icon, size);
-  }
+  };
 
   /**
    * Default method for getting a resource from current theme
    *
-   * @param   String    name    Resource filename
-   * @param   String    type    Type ('base' or a sub-folder)
+   * @function getThemeResource
+   * @memberof OSjs.API
    *
-   * @return  String            The absolute URL to the resource
+   * @param   {String}    name    Resource filename
+   * @param   {String}    type    Type ('base' or a sub-folder)
    *
-   * @api     OSjs.API.getThemeResource()
+   * @return  {String}            The absolute URL to the resource
    */
-  function doGetThemeResource(name, type) {
+  API.getThemeResource = function _apiGetThemeResource(name, type) {
     name = name || null;
     type = type || null;
 
     var root = OSjs.API.getConfig('Connection.ThemeURI');
+    if ( !root.match(/^\//) ) {
+      root = window.location.pathname + root;
+    }
 
     function getName(str, theme) {
       if ( !str.match(/^\//) ) {
@@ -996,25 +1036,26 @@
       name = getName(name, theme);
     }
 
-    return OSjs.Utils.checkdir(name);
-  }
+    return Utils.checkdir(name);
+  };
 
   /**
    * Default method for getting a sound from theme
    *
-   * @param   String    name    Resource filename
+   * @function getSound
+   * @memberof OSjs.API
    *
-   * @return  String            The absolute URL to the resource
+   * @param   {String}    name    Resource filename
    *
-   * @api     OSjs.API.getSound()
+   * @return  {String}            The absolute URL to the resource
    */
-  function doGetSound(name) {
+  API.getSound = function _apiGetSound(name) {
     name = name || null;
     if ( name ) {
       var wm = OSjs.Core.getWindowManager();
       var theme = wm ? wm.getSoundTheme() : 'default';
       var root = OSjs.API.getConfig('Connection.SoundURI');
-      var compability = OSjs.Utils.getCompability();
+      var compability = Utils.getCompability();
       if ( !name.match(/^\//) ) {
         var ext = 'oga';
         if ( !compability.audioTypes.ogg ) {
@@ -1023,21 +1064,22 @@
         name = root + '/' + theme + '/' + name + '.' + ext;
       }
     }
-    return OSjs.Utils.checkdir(name);
-  }
+    return Utils.checkdir(name);
+  };
 
   /**
    * Default method for getting a icon from theme
    *
-   * @param   String    name    Resource filename
-   * @param   String    size    (Optional) Icon size (default=16x16)
-   * @param   Process   app     (Optional) Application instance reference. Can also be String. For `name` starting with './'
+   * @function getIcon
+   * @memberof OSjs.API
    *
-   * @return  String            The absolute URL to the resource
+   * @param   {String}              name          Resource filename
+   * @param   {String}              [size=16x16]  Icon size
+   * @param   {OSjs.Core.Process}   [app]         Application instance reference. Can also be String. For `name` starting with './'
    *
-   * @api     OSjs.API.getIcon()
+   * @return  {String}            The absolute URL to the resource
    */
-  function doGetIcon(name, size, app) {
+  API.getIcon = function _apiGetIcon(name, size, app) {
     name = name || null;
     size = size || '16x16';
     app  = app  || null;
@@ -1071,22 +1113,23 @@
       }
     }
 
-    return OSjs.Utils.checkdir(name);
-  }
+    return Utils.checkdir(name);
+  };
 
   /**
    * Method for getting a config parameter by path (Ex: "VFS.Mountpoints.shared.enabled")
    *
-   * @param   String    path              (Optional) Path
-   * @param   Mixed     defaultValue      (Optional) Default value if undefined
+   * @function getConfig
+   * @memberof OSjs.API
+   * @see OSjs.Core.getConfig
    *
-   * @return  Mixed             Parameter value or entire tree on no path
+   * @param   {String}    [path]                        Path
+   * @param   {Mixed}     [defaultValue=undefined]      Use default value
    *
-   * @see     OSjs.Core.getConfig()
-   * @api     OSjs.API.getConfig()
+   * @return  {Mixed}             Parameter value or entire tree on no path
    */
-  function doGetConfig(path, defaultValue) {
-    var config = OSjs.Utils.cloneObject(OSjs.Core.getConfig());
+  API.getConfig = function _apiGetConfig(path, defaultValue) {
+    var config = Utils.cloneObject(OSjs.Core.getConfig());
     if ( typeof path === 'string' ) {
       var result = window.undefined;
       var queue = path.split(/\./);
@@ -1094,42 +1137,38 @@
 
       queue.forEach(function(k, i) {
         if ( i >= queue.length - 1 ) {
-          result = ns[k];
+          if ( ns ) {
+            result = ns[k];
+          }
         } else {
           ns = ns[k];
         }
       });
 
-      if ( typeof result === 'undefined' ) {
+      if ( typeof result === 'undefined' && typeof defaultValue !== 'undefined' ) {
         return defaultValue;
-      }
-      if ( typeof defaultValue !== 'undefined' ) {
-        return result || defaultValue;
       }
 
       return result;
     }
     return config;
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // SETTINGS API METHODS
-  /////////////////////////////////////////////////////////////////////////////
+  };
 
   /**
    * Get default configured path
    *
-   * @param   String    fallback      Fallback path on error (default= "osjs:///")
-   * @return  String
+   * @function getDefaultPath
+   * @memberof OSjs.API
    *
-   * @api     OSjs.API.getDefaultPath()
+   * @param   {String}    fallback      Fallback path on error (default= "osjs:///")
+   * @return  {String}
    */
-  function doGetDefaultPath(fallback) {
+  API.getDefaultPath = function _apiGetDefaultPath(fallback) {
     if ( fallback && fallback.match(/^\//) ) {
       fallback = null;
     }
     return OSjs.API.getConfig('VFS.Home') || fallback || 'osjs:///';
-  }
+  };
 
   /////////////////////////////////////////////////////////////////////////////
   // GUI API METHODS
@@ -1138,29 +1177,31 @@
   /**
    * Create a new Desktop Notification
    *
-   * @see  WindowManager::notification()
-   * @api OSjs.API.createNotification()
+   * @function createNotification
+   * @memberof OSjs.API
+   * @see OSjs.Core.WindowManager#notification
    */
-  function doCreateNotification(opts) {
+  API.createNotification = function _apiCreateNotification(opts) {
     var wm = OSjs.Core.getWindowManager();
     return wm.notification(opts);
-  }
+  };
 
   /**
    * Create a new dialog
    *
    * You can also pass a function as `className` to return an instance of your own class
    *
-   * @param   String        className       Dialog Namespace Class Name
-   * @param   Object        args            Arguments you want to send to dialog
-   * @param   Function      callback        Callback on dialog action (close/ok etc) => fn(ev, button, result)
-   * @param   Mixed         parentObj       (Optional) A window or app (to make it a child window)
+   * @function createDialog
+   * @memberof OSjs.API
    *
-   * @return  Window
+   * @param   {String}        className       Dialog Namespace Class Name
+   * @param   {Object}        args            Arguments you want to send to dialog
+   * @param   {Function}      callback        Callback on dialog action (close/ok etc) => fn(ev, button, result)
+   * @param   {Mixed}         [parentObj]     A window or app (to make it a child window)
    *
-   * @api     OSjs.API.createDialog()
+   * @return  {OSjs.Core.Window}
    */
-  function doCreateDialog(className, args, callback, parentObj) {
+  API.createDialog = function _apiCreateDialog(className, args, callback, parentObj) {
     callback = callback || function() {};
 
     function cb() {
@@ -1184,7 +1225,7 @@
       var wm = OSjs.Core.getWindowManager();
       wm.addWindow(win, true);
     } else if ( parentObj instanceof OSjs.Core.Window ) {
-      win._addHook('destroy', function() {
+      win._on('destroy', function() {
         if ( parentObj ) {
           parentObj._focus();
         }
@@ -1199,19 +1240,21 @@
     }, 10);
 
     return win;
-  }
+  };
 
   /**
    * Create (or show) loading indicator
    *
-   * @param   String    name        Name of notification (unique)
-   * @param   Object    opts        Options
-   * @param   int       panelId     Panel ID (optional)
+   * @function createLoading
+   * @memberof OSjs.API
    *
-   * @return  String                Or false on error
-   * @api     OSjs.API.createLoading()
+   * @param   {String}    name          Name of notification (unique)
+   * @param   {Object}    opts          Options
+   * @param   {Number}    [panelId]     Panel ID
+   *
+   * @return  {String}                Or false on error
    */
-  function createLoading(name, opts, panelId) {
+  API.createLoading = function _apiCreateLoading(name, opts, panelId) {
     var wm = OSjs.Core.getWindowManager();
     if ( wm ) {
       if ( wm.createNotificationIcon(name, opts, panelId) ) {
@@ -1219,18 +1262,20 @@
       }
     }
     return false;
-  }
+  };
 
   /**
    * Destroy (or hide) loading indicator
    *
-   * @param   String    name        Name of notification (unique)
-   * @param   int       panelId     Panel ID (optional)
+   * @function destroyLoading
+   * @memberof OSjs.API
    *
-   * @return  boolean
-   * @api     OSjs.API.destroyLoading()
+   * @param   {String}    name          Name of notification (unique)
+   * @param   {Number}    [panelId]     Panel ID
+   *
+   * @return  {Boolean}
    */
-  function destroyLoading(name, panelId) {
+  API.destroyLoading = function _apiDestroyLoading(name, panelId) {
     var wm = OSjs.Core.getWindowManager();
     if ( name ) {
       if ( wm ) {
@@ -1240,16 +1285,17 @@
       }
     }
     return false;
-  }
+  };
 
   /**
    * Checks the given permission (groups) against logged in user
    *
-   * @param   Mixed     group         Either a string or array of groups
+   * @function checkPermission
+   * @memberof OSjs.API
    *
-   * @api     OSjs.API.checkPermission()
+   * @param   {Mixed}     group         Either a string or array of groups
    */
-  function doCheckPermission(group) {
+  API.checkPermission = function _apiCheckPermission(group) {
     var user = OSjs.Core.getHandler().getUserData();
     var userGroups = user.groups || [];
 
@@ -1267,23 +1313,24 @@
       });
     }
     return result;
-  }
+  };
 
   /**
    * Checks the given permission (groups) against logged in user
    *
    * Returns an object with the methods `update(precentage)` and `destroy()`
    *
-   * @param   String      name          The name to display
-   * @param   String      icon          The icon to display
-   * @param   String      label         (Optional) The label (default = 'Starting')
-   * @param   DOMElement  parentEl      (Optional) The parent element
+   * @function createSplash
+   * @memberof OSjs.API
    *
-   * @return  Object
+   * @param   {String}      name              The name to display
+   * @param   {String}      icon              The icon to display
+   * @param   {String}      [label=Starting]  The label
+   * @param   {Node}        [parentEl]        The parent element
    *
-   * @api     OSjs.API.createSplash()
+   * @return  {Object}
    */
-  function doCreateSplash(name, icon, label, parentEl) {
+  API.createSplash = function _apiCreateSplash(name, icon, label, parentEl) {
     label = label || 'Starting';
     parentEl = parentEl || document.body;
 
@@ -1318,7 +1365,7 @@
 
     return {
       destroy: function() {
-        splash = OSjs.Utils.$remove(splash);
+        splash = Utils.$remove(splash);
 
         img = null;
         title = null;
@@ -1327,7 +1374,10 @@
       },
 
       update: function(p, c) {
-        if ( !splash || !splashBar ) { return; }
+        if ( !splash || !splashBar ) {
+          return;
+        }
+
         var per = c ? 0 : 100;
         if ( c ) {
           per = (p / c) * 100;
@@ -1335,7 +1385,7 @@
         (new OSjs.GUI.Element(splashBar)).set('value', per);
       }
     };
-  }
+  };
 
   /////////////////////////////////////////////////////////////////////////////
   // MISC API METHODS
@@ -1344,64 +1394,89 @@
   /**
    * Global function for showing an error dialog
    *
-   * @param   String    title       Dialog title
-   * @param   String    message     Dialog message
-   * @param   String    error       Error message
-   * @param   Object    exception   Exception reference (optional)
-   * @param   boolean   bugreport   Enable bugreporting for this error (default=fale)
+   * @function error
+   * @memberof OSjs.API
    *
-   * @return  null
-   * @api     OSjs.API.error()
+   * @param   {String}    title               Dialog title
+   * @param   {String}    message             Dialog message
+   * @param   {String}    error               Error message
+   * @param   {Object}    [exception]         Exception reference
+   * @param   {Boolean}   [bugreport=false]   Enable bugreporting for this error
    */
-  function doErrorDialog(title, message, error, exception, bugreport) {
-    if ( OSjs.API.getConfig('BugReporting') ) {
-      bugreport = typeof bugreport === 'undefined' ? false : (bugreport ? true : false);
-    } else {
-      bugreport = false;
+  API.error = function _apiError(title, message, error, exception, bugreport) {
+    bugreport = (function() {
+      if ( OSjs.API.getConfig('BugReporting') ) {
+        return typeof bugreport === 'undefined' ? false : (bugreport ? true : false);
+      }
+      return false;
+    })();
+
+    function _dialog() {
+      var wm = OSjs.Core.getWindowManager();
+      if ( wm && wm._fullyLoaded ) {
+        try {
+          OSjs.API.createDialog('Error', {
+            title: title,
+            message: message,
+            error: error,
+            exception: exception,
+            bugreport: bugreport
+          });
+
+          return true;
+        } catch ( e ) {
+          console.warn('An error occured while creating Dialogs.Error', e);
+          console.warn('stack', e.stack);
+        }
+      }
+
+      return false;
     }
 
     OSjs.API.blurMenu();
 
-    var wm = OSjs.Core.getWindowManager();
-    if ( wm && wm._fullyLoaded ) {
-      try {
-        return OSjs.API.createDialog('Error', {
-          title: title,
-          message: message,
-          error: error,
-          exception: exception,
-          bugreport: bugreport
-        });
-      } catch ( e ) {
-        console.warn('An error occured while creating Dialogs.Error', e);
-        console.warn('stack', e.stack);
-      }
+    if ( exception && (exception.message.match(/^Script Error/i) && String(exception.lineNumber).match(/^0/)) ) {
+      console.error('VENDOR ERROR', {
+        title: title,
+        message: message,
+        error: error,
+        exception: exception
+      });
+      return;
     }
 
-    window.alert(title + '\n\n' + message + '\n\n' + error);
+    if ( OSjs.API.getConfig('MOCHAMODE') ) {
+      console.error(title, message, error, exception);
+    } else {
+      if ( _dialog() ) {
+        return;
+      }
 
-    return null;
-  }
+      window.alert(title + '\n\n' + message + '\n\n' + error);
+    }
+  };
 
   /**
    * Global function for playing a sound
    *
-   * @param   String      name      Sound name
-   * @param   float       volume    Sound volume (0.0 - 1.0)
+   * @function playSound
+   * @memberof OSjs.API
    *
-   * @return  DOMAudio
-   * @api     OSjs.API.playSound()
+   * @param   {String}      name      Sound name
+   * @param   {Number}      volume    Sound volume (0.0 - 1.0)
+   *
+   * @return {Audio}
    */
-  function doPlaySound(name, volume) {
-    var compability = OSjs.Utils.getCompability();
+  API.playSound = function _apiPlaySound(name, volume) {
+    var compability = Utils.getCompability();
     if ( !compability.audio ) {
-      console.debug('doPlaySound()', 'Browser has no support for sounds!');
+      console.debug('API::playSound()', 'Browser has no support for sounds!');
       return false;
     }
 
     var wm = OSjs.Core.getWindowManager();
     if ( wm && !wm.getSetting('enableSounds') ) {
-      console.debug('doPlaySound()', 'Window Manager has disabled sounds!');
+      console.debug('API::playSound()', 'Window Manager has disabled sounds!');
       return false;
     }
 
@@ -1410,38 +1485,41 @@
     }
 
     var f = OSjs.API.getSound(name);
-    console.info('doPlaySound()', name, f);
+    console.debug('API::playSound()', name, f);
     var a = new Audio(f);
     a.volume = volume;
     a.play();
     return a;
-  }
+  };
 
   /**
    * Set the "clipboard" data
    *
    * NOTE: This does not set the operating system clipboard (yet...)
    *
-   * @param   Mixed       data      What data to set
-   * @return  void
-   * @api     OSjs.API.setClipboard()
+   * @function setClipboard
+   * @memberof OSjs.API
+   *
+   * @param   {Mixed}       data      What data to set
    */
-  function doSetClipboard(data) {
-    console.info('OSjs.API.setClipboard()', data);
+  API.setClipboard = function _apiSetClipboard(data) {
+    console.debug('OSjs.API.setClipboard()', data);
     _CLIPBOARD = data;
-  }
+  };
 
   /**
    * Get the "clipboard" data
    *
    * NOTE: This does not the operating system clipboard (yet...)
    *
-   * @return  Mixed
-   * @api     OSjs.API.getClipboard()
+   * @function getClipboard
+   * @memberof OSjs.API
+   *
+   * @return  {Mixed}
    */
-  function doGetClipboard() {
+  API.getClipboard = function _apiGetClipboard() {
     return _CLIPBOARD;
-  }
+  };
 
   /**
    * Returns an instance of ServiceNotificationIcon
@@ -1449,18 +1527,79 @@
    * This is the icon in the panel where external connections
    * etc gets a menu entry.
    *
-   * @return  ServiceNotificationIcon
-   * @api     OSjs.API.getServiceNotificationIcon()
+   * @function getServiceNotificationIcon
+   * @memberof OSjs.API
+   *
+   * @return  {ServiceNotificationIcon}
    */
-  var doGetServiceNotificationIcon = (function() {
+  API.getServiceNotificationIcon = (function() {
     var _instance;
 
-    return function() {
+    return function _apiGetServiceNotificationIcon() {
       if ( !_instance ) {
         _instance = new ServiceNotificationIcon();
       }
       return _instance;
     };
+  })();
+
+  /**
+   * Toggles fullscreen of an element
+   *
+   * @function toggleFullscreen
+   * @memberof OSjs.API
+   *
+   * @param {Node}      el    The DOM Node
+   * @param {Boolean}   [t]   Toggle value (auto-detected)
+   */
+  API.toggleFullscreen = (function() {
+
+    var _prev;
+
+    function trigger(el, state) {
+      function _request() {
+        if ( el.requestFullscreen ) {
+          el.requestFullscreen();
+        } else if ( el.mozRequestFullScreen ) {
+          el.mozRequestFullScreen();
+        } else if ( el.webkitRequestFullScreen ) {
+          el.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
+        }
+      }
+
+      function _restore() {
+        if ( el.webkitCancelFullScreen ) {
+          el.webkitCancelFullScreen();
+        } else if ( el.mozCancelFullScreen ) {
+          el.mozCancelFullScreen();
+        } else if ( el.exitFullscreen ) {
+          el.exitFullscreen();
+        }
+      }
+
+      if ( el ) {
+        if ( state ) {
+          _request();
+        } else {
+          _restore();
+        }
+      }
+    }
+
+    return function _apiToggleFullscreen(el, t) {
+      if ( typeof t === 'boolean' ) {
+        trigger(el, t);
+      } else {
+        if ( _prev && _prev !== el ) {
+          trigger(_prev, false);
+        }
+
+        trigger(el, _prev !== el);
+      }
+
+      _prev = el;
+    };
+
   })();
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1470,10 +1609,10 @@
   /**
    * Signs the user out and shuts down OS.js
    *
-   * @return  void
-   * @method  OSjs.API.signOut()
+   * @function signOut
+   * @memberof OSjs.API
    */
-  function doSignOut() {
+  API.signOut = function _apiSignOut() {
     var handler = OSjs.Core.getHandler();
     var wm = OSjs.Core.getWindowManager();
 
@@ -1500,19 +1639,19 @@
     } else {
       signOut(true);
     }
-  }
+  };
 
   /**
    * Method for triggering a hook
    *
-   * @param   String    name      Hook name
-   * @param   Array     args      List of arguments
-   * @param   Object    thisarg   'this' ref
+   * @function triggerHook
+   * @memberof OSjs.API
    *
-   * @return  void
-   * @api     OSjs.API.triggerHook()
+   * @param   {String}    name      Hook name
+   * @param   {Array}     args      List of arguments
+   * @param   {Object}    thisarg   'this' ref
    */
-  function doTriggerHook(name, args, thisarg) {
+  API.triggerHook = function _apiTriggerHook(name, args, thisarg) {
     thisarg = thisarg || OSjs;
     args = args || [];
 
@@ -1529,81 +1668,69 @@
         }
       });
     }
-  }
+  };
 
   /**
    * Method for adding a hook
    *
-   * @param   String    name    Hook name
-   * @param   Function  fn      Callback => fn()
+   * @function addHook
+   * @memberof OSjs.API
    *
-   * @return  void
-   * @api     OSjs.API.addHook()
+   * @param   {String}    name    Hook name
+   * @param   {Function}  fn      Callback => fn()
+   *
+   * @return  {Number}       The index of hook
    */
-  function doAddHook(name, fn) {
+  API.addHook = function _apiAddHook(name, fn) {
     if ( typeof _hooks[name] !== 'undefined' ) {
-      _hooks[name].push(fn);
+      return _hooks[name].push(fn) - 1;
     }
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // EXPORTS
-  /////////////////////////////////////////////////////////////////////////////
-
-  OSjs.API._                      = doTranslate;
-  OSjs.API.__                     = doTranslateList;
-  OSjs.API.getLocale              = doGetLocale;
-  OSjs.API.setLocale              = doSetLocale;
-
-  OSjs.API.curl                   = doCurl;
-  OSjs.API.call                   = doAPICall;
-
-  OSjs.API.open                   = doLaunchFile;
-  OSjs.API.launch                 = doLaunchProcess;
-  OSjs.API.launchList             = doLaunchProcessList;
-  OSjs.API.relaunch               = doReLaunchProcess;
-
-  OSjs.API.getApplicationResource = doGetApplicationResource;
-  OSjs.API.getThemeCSS            = doGetThemeCSS;
-  OSjs.API.getIcon                = doGetIcon;
-  OSjs.API.getFileIcon            = doGetFileIcon;
-  OSjs.API.getThemeResource       = doGetThemeResource;
-  OSjs.API.getSound               = doGetSound;
-  OSjs.API.getConfig              = doGetConfig;
-
-  OSjs.API.getDefaultPath         = doGetDefaultPath;
+    return -1;
+  };
 
   /**
-   * @api OSjs.API.createMenu()
-   * @see OSjs.GUI.Helpers.createMenu()
+   * Method for removing a hook
+   *
+   * @function removeHook
+   * @memberof OSjs.API
+   *
+   * @param   {String}    name    Hook name
+   * @param   {Number}    index     Hook index
+   *
+   * @return  {Boolean}
    */
-  OSjs.API.createMenu             = function() {
+  API.removeHook = function _apiRemoveHook(name, index) {
+    if ( typeof _hooks[name] !== 'undefined' ) {
+      if ( _hooks[name][index] ) {
+        _hooks[name][index] = null;
+        return true;
+      }
+    }
+    return false;
+  };
+
+  /////////////////////////////////////////////////////////////////////////////
+  // EXTERNALS
+  /////////////////////////////////////////////////////////////////////////////
+
+  API.shutdown = API.shutdown || function() {}; // init.js
+
+  /**
+   * @function createMenu
+   * @memberof OSjs.API
+   * @see OSjs.GUI.Helpers.createMenu
+   */
+  API.createMenu = function() {
     return OSjs.GUI.Helpers.createMenu.apply(null, arguments);
   };
 
   /**
-   * @api OSjs.API.blurMenu()
-   * @see OSjs.GUI.Helpers.blurMenu()
+   * @function blurMenu
+   * @memberof OSjs.API
+   * @see OSjs.GUI.Helpers.blurMenu
    */
-  OSjs.API.blurMenu               = function() {
+  API.blurMenu = function() {
     return OSjs.GUI.Helpers.blurMenu.apply(null, arguments);
   };
 
-  OSjs.API.createLoading          = createLoading;
-  OSjs.API.destroyLoading         = destroyLoading;
-  OSjs.API.createSplash           = doCreateSplash;
-  OSjs.API.createDialog           = doCreateDialog;
-  OSjs.API.createNotification     = doCreateNotification;
-  OSjs.API.checkPermission        = doCheckPermission;
-
-  OSjs.API.error                      = doErrorDialog;
-  OSjs.API.shutdown                   = OSjs.API.shutdown || function() {}; // init.js
-  OSjs.API.triggerHook                = doTriggerHook;
-  OSjs.API.addHook                    = doAddHook;
-  OSjs.API.signOut                    = doSignOut;
-  OSjs.API.playSound                  = doPlaySound;
-  OSjs.API.setClipboard               = doSetClipboard;
-  OSjs.API.getClipboard               = doGetClipboard;
-  OSjs.API.getServiceNotificationIcon = doGetServiceNotificationIcon;
-
-})();
+})(OSjs.Utils, OSjs.API);

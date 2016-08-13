@@ -37,12 +37,14 @@
   /**
    * PanelItem: AppMenu
    */
-  var PanelItemAppMenu = function(settings) {
-    PanelItem.apply(this, ['PanelItemAppMenu PanelItemFill', 'AppMenu', settings, {}]);
+  function PanelItemAppMenu(settings) {
+    PanelItem.apply(this, ['PanelItemAppMenu', 'AppMenu', settings, {}]);
     this.$container = null;
-  };
+  }
 
   PanelItemAppMenu.prototype = Object.create(PanelItem.prototype);
+  PanelItemAppMenu.constructor = PanelItem;
+
   PanelItemAppMenu.Name = 'AppMenu'; // Static name
   PanelItemAppMenu.Description = 'Application Menu'; // Static description
   PanelItemAppMenu.Icon = 'actions/stock_about.png'; // Static icon
@@ -53,13 +55,10 @@
     var root = PanelItem.prototype.init.apply(this, arguments);
     var wm = OSjs.Core.getWindowManager();
 
-    this.$container = document.createElement('ul');
-    root.appendChild(this.$container);
-
     var sel = document.createElement('li');
-    sel.className = 'Button';
     sel.title = API._('LBL_APPLICATIONS');
     sel.innerHTML = '<img alt="" src="' + API.getIcon(wm.getSetting('icon') || 'osjs-white.png') + '" />';
+    sel.className = 'corewm-panel-button-centered';
     sel.setAttribute('role', 'button');
     sel.setAttribute('data-label', 'OS.js Application Menu');
 
@@ -68,12 +67,8 @@
       ev.stopPropagation();
       OSjs.Applications.CoreWM.showMenu(ev);
     });
-    Utils.$bind(sel, 'contextmenu', function(ev) {
-      ev.preventDefault();
-      ev.stopPropagation();
-    });
 
-    this.$container.appendChild(sel);
+    this._$container.appendChild(sel);
 
     return root;
   };

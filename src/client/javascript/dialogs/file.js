@@ -33,23 +33,27 @@
   /**
    * An 'File' dialog
    *
-   * @param   args      Object        An object with arguments
-   * @param   callback  Function      Callback when done => fn(ev, button, result)
+   * @example
    *
-   * @option    args    title       String      Dialog title
-   * @option    args    type        String      Dialog type (default=open, alternative=save)
-   * @option    args    multiple    boolean     Multiple file selection (default=false)
-   * @option    args    file        VFS.File    (Optional) Current file
-   * @option    args    path        String      (Optional) Default path
-   * @option    args    filename    String      (Optional) Default filename
-   * @option    args    extension   String      (Optional) Default file extension
-   * @option    args    mime        String      (Optional) Default file MIME
-   * @option    args    filter      Array       (Optional) Array of MIMIE filters
-   * @option    args    select      String      (Optional) Selection type (file/dir)
+   * OSjs.API.createDialog('File', {}, fn);
    *
-   * @extends DialogWindow
-   * @class FileDialog
-   * @api OSjs.Dialogs.File
+   * @param  {Object}           args                      An object with arguments
+   * @param  {String}           args.title                Dialog title
+   * @param  {String}           args.title                Dialog title
+   * @param  {String}           [args.type=open]          Dialog type (alternative=save)
+   * @param  {Boolean}          [args.multiple=false]     Multiple file selection
+   * @param  {OSjs.VFS.File}    [args.file]               Current file
+   * @param  {String}           [args.path]               Default path
+   * @param  {String}           [args.filename]           Default filename
+   * @param  {String}           [args.extension]          Default file extension
+   * @param  {String}           [args.mime]               Default file MIME
+   * @param  {Array}            [args.filter]             Array of MIMIE filters
+   * @param  {Array}            [args.mfilter]            Array of function to filter module list
+   * @param  {String}           [args.select]             Selection type (file/dir)
+   * @param  {CallbackDialog}   callback                  Callback when done
+   *
+   * @constructor File
+   * @memberof OSjs.Dialogs
    */
   function FileDialog(args, callback) {
     args = Utils.argumentDefaults(args, {
@@ -61,6 +65,7 @@
       extension:  '',
       mime:       'application/octet-stream',
       filter:     [],
+      mfilter:    [],
       select:     null,
       multiple:   false
     });
@@ -209,14 +214,28 @@
       this.scheme.find(this, 'FileInput').hide();
     }
 
-    var rootPath = VFS.getRootFromPath(this.path);
-    var modules = [];
-    VFS.getModules().forEach(function(m) {
-      modules.push({
+    var mm = OSjs.Core.getMountManager();
+    var rootPath = mm.getRootFromPath(this.path);
+    var modules = mm.getModules().filter(function(m) {
+      if ( self.args.mfilter.length ) {
+        var success = false;
+
+        self.args.mfilter.forEach(function(fn) {
+          if ( !success ) {
+            success = fn(m);
+          }
+        });
+
+        return success;
+      }
+      return true;
+    }).map(function(m) {
+      return {
         label: m.name + (m.module.readOnly ? Utils.format(' ({0})', API._('LBL_READONLY')) : ''),
         value: m.module.root
-      });
+      };
     });
+
     mlist.clear().add(modules).set('value', rootPath);
     mlist.on('change', function(ev) {
       self.changePath(ev.detail, true);
@@ -235,7 +254,8 @@
     var lastDir = this.path;
 
     function resetLastSelected() {
-      var rootPath = VFS.getRootFromPath(lastDir);
+      var mm = OSjs.Core.getMountManager();
+      var rootPath = mm.getRootFromPath(lastDir);
       try {
         self.scheme.find(self, 'ModuleSelect').set('value', rootPath);
       } catch ( e ) {
@@ -388,7 +408,6 @@
   // EXPORTS
   /////////////////////////////////////////////////////////////////////////////
 
-  OSjs.Dialogs = OSjs.Dialogs || {};
   OSjs.Dialogs.File = Object.seal(FileDialog);
 
 })(OSjs.API, OSjs.VFS, OSjs.Utils, OSjs.Core.DialogWindow);

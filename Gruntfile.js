@@ -48,13 +48,12 @@
     } catch (e) { }
 
     // Make sure we only load required modules (ignore warnings)
-    var checks = ['test', 'jshint', 'jscs', 'csslint', 'validate_xml', 'mochaTest'];
+    var checks = ['test', 'eslint', 'csslint', 'validate_xml', 'mochaTest'];
     checks.forEach(function(k) {
       if ( grunt.cli.tasks.indexOf(k) >= 0 ) {
-        grunt.loadNpmTasks('grunt-contrib-jshint');
+        grunt.loadNpmTasks('grunt-eslint');
         grunt.loadNpmTasks('grunt-mocha-test');
         //grunt.loadNpmTasks('grunt-mocha');
-        grunt.loadNpmTasks('grunt-jscs');
         grunt.loadNpmTasks('grunt-contrib-csslint');
         grunt.loadNpmTasks('grunt-contrib-validate-xml');
         return false;
@@ -74,16 +73,15 @@
     // Load tasks
     //
     grunt.initConfig({
-      jshint: {
+      eslint: {
         options: {
-          jshintrc: true
+          configFile: '.eslintrc'
         },
-        all: [
+        target: [
           'Gruntfile.js',
           'src/*.js',
           'src/server/node/*.js',
           'src/server/node/**/*.js',
-          'src/server/node/node_modules/osjs/*.js',
           'src/client/javascript/*.js',
           'src/client/javascript/**/*.js',
           'src/packages/default/**/*.js',
@@ -100,6 +98,7 @@
           src: [
             'src/client/stylesheets/*.css',
             '!src/client/stylesheets/gui.css',
+            '!src/client/stylesheets/debug.css',
             'src/client/themes/fonts/*/*.css',
             'src/client/themes/styles/*/*.css',
             'src/packages/default/*/*.css',
@@ -112,13 +111,14 @@
             'compatible-vendor-prefixes': false
           },
           src: [
-            'src/client/stylesheets/gui.css'
+            'src/client/stylesheets/gui.css',
+            'src/client/stylesheets/debug.css'
           ]
         }
       },
       mochaTest: {
         test: {
-          src: ['test/server/*.js']
+          src: ['src/server/test/node/*.js']
         }
       },
       watch: {
@@ -159,25 +159,6 @@
           tasks: ['config', 'manifest']
         }
       },
-      jscs: {
-        src: [
-          'Gruntfile.js',
-          'src/*.js',
-          'src/server/node/*.js',
-          'src/server/node/**/*.js',
-          'src/server/node/node_modules/osjs/*.js',
-          'src/client/javascript/*.js',
-          'src/client/javascript/**/*.js',
-          'src/packages/default/**/*.js',
-          '!src/packages/default/Broadway/**'
-        ],
-        options: {
-          config: '.jscsrc',
-          verbose: true,
-          fix: false,
-          requireCurlyBraces: ['if']
-        }
-      },
       validate_xml: {
         all: {
           src: [
@@ -201,39 +182,46 @@
     grunt.registerTask('clean', 'Clean up all build files', function(arg) {
     });
 
-    grunt.registerTask('config', 'Build config files (or modify `set:path.to.key:value`, `get:path.to.key`, `preload:name:path:type`, `(add|remove)-repository:name)', function(fn, key, value, arg) {
-      if ( fn ) {
-        var result;
-        if ( fn === 'get' ) {
-          grunt.log.writeln('Path: ' + key);
+    grunt.registerTask('config', 'Modify and build config files', function(fn, key, value, arg) {
+      var getPath = grunt.option('get');
+      var setPath = grunt.option('set');
+      var value = grunt.option('value');
+      var preload = grunt.option('preload');
+      var mount = grunt.option('mount');
 
-          result = _build.getConfigPath(grunt, key);
-          grunt.log.writeln('Type: ' + typeof result);
-          console.log(result);
-        } else if ( fn === 'set' ) {
-          grunt.log.writeln('Path: ' + key);
+      var result;
+      if ( getPath ) {
+        grunt.log.writeln('Path: ' + getPath);
 
-          result = _build.setConfigPath(grunt, key, value);
+        result = _build.getConfigPath(grunt, getPath);
+        grunt.log.writeln('Type: ' + typeof result);
+        console.log(result);
+      } else if ( setPath ) {
+        if ( value ) {
+          grunt.log.writeln('Path: ' + setPath);
+
+          result = _build.setConfigPath(grunt, setPath, value);
           console.log(result);
-        } else if ( fn === 'preload' ) {
-          result = _build.addPreload(grunt, key, value, arg);
-          console.log(result);
-        } else if ( fn === 'mount' ) {
-          result = _build.addMountpoint(grunt, key, value, arg);
-        } else if ( fn === 'add-repository' ) {
-          result = _build.addRepository(grunt, key);
-          console.log(result);
-        } else if ( fn === 'remove-repository' ) {
-          result = _build.removeRepository(grunt, key);
-          console.log(result);
-        } else {
-          throw new TypeError('Invalid config operation \'' + fn + '\'');
         }
-        return;
+      } else if ( preload ) {
+        result = _build.addPreload(grunt, preload, grunt.option('path'), grunt.option('type'));
+        console.log(result);
+      } else if ( mount ) {
+        result = _build.addMountpoint(grunt, mount, grunt.option('description'), grunt.option('path'));
+      } else if ( grunt.option('repository') ) {
+        var add = grunt.option('add');
+        var remove = grunt.option('remove');
+        if ( add ) {
+          result = _build.addRepository(grunt, add);
+          console.log(result);
+        } else if ( remove ) {
+          result = _build.removeRepository(grunt, remove);
+          console.log(result);
+        }
+      } else {
+        grunt.log.writeln('Writing configuration files...');
+        _build.createConfigurationFiles(grunt, fn);
       }
-
-      grunt.log.writeln('Writing configuration files...');
-      _build.createConfigurationFiles(grunt, fn);
     });
 
     grunt.registerTask('core', 'Build dist core files', function(arg) {
@@ -249,15 +237,19 @@
 
     grunt.registerTask('packages', 'Build dist package files (or a single package, ex: grunt packages:default/About. Also enable/disable)', function(arg, arg2) {
       grunt.log.writeln('Building packages...');
-      if ( arg === 'disable' || arg === 'enable' ) {
-        _build.togglePackage(grunt, arg2, arg === 'enable');
-        return;
-      } else if ( arg === 'list' ) {
-        _build.listPackages(grunt);
-        return;
-      }
+      var enable = grunt.option('enable');
+      var disable = grunt.option('disable');
 
-      _build.buildPackages(grunt, arg);
+      if ( enable ) {
+        _build.togglePackage(grunt, enable, true);
+      } else if ( disable ) {
+        _build.togglePackage(grunt, disable, false);
+      } else if ( grunt.option('list' ) ) {
+        _build.listPackages(grunt);
+      } else {
+        var done = this.async();
+        _build.buildPackages(grunt, done, arg);
+      }
     });
 
     grunt.registerTask('themes', 'Build theme files (arguments: resources, fonts. Or a single theme, ex: grunt themes:MyThemename)', function(arg) {
@@ -322,7 +314,7 @@
     grunt.registerTask('nw', ['config', 'core:nw', 'themes', 'packages', 'manifest', 'standalone:nw', 'nwjs']);
     grunt.registerTask('dist', ['config', 'dist-files:dist', 'core', 'themes', 'packages', 'manifest']);
     grunt.registerTask('dist-dev', ['config', 'dist-files:dist-dev', 'themes:fonts', 'themes:styles', 'manifest']);
-    grunt.registerTask('test', ['jshint', 'jscs', 'csslint', 'validate_xml', 'mochaTest'/*, 'mocha'*/]);
+    grunt.registerTask('test', ['eslint', 'csslint', 'validate_xml', 'mochaTest'/*, 'mocha'*/]);
   };
 
 })(require('node-fs-extra'), require('path'), require('./src/build.js'), require('grunt'), require('less'));

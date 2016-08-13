@@ -31,9 +31,6 @@
 (function(Utils) {
   'use strict';
 
-  window.OSjs       = window.OSjs       || {};
-  OSjs.Helpers      = OSjs.Helpers      || {};
-
   /////////////////////////////////////////////////////////////////////////////
   // Settings Fragment.
   /////////////////////////////////////////////////////////////////////////////
@@ -41,14 +38,19 @@
   /**
    * Settings Fragment Class
    *
+   * <pre><b>
    * This is the object returned when manipulating with SettingsManager.
+   * </b></pre>
    *
-   * @param   Object        obj         Settings tree
-   * @param   String        poolName    Name of the pool
+   * @summary This is the class returned from SettingsManager getters.
+   * @throws {Error} If an invalid object was given
    *
-   * @see     OSjs.Core.SettingsManager
-   * @api     OSjs.Helpers.SettingsFragment
-   * @class
+   * @param   {Object}        obj         Settings tree
+   * @param   {String}        poolName    Name of the pool
+   *
+   * @constructor
+   * @memberof OSjs.Helpers
+   * @see OSjs.Core.SettingsManager
    */
   function SettingsFragment(obj, poolName) {
     this._pool = poolName;
@@ -62,18 +64,17 @@
   /**
    * Gets setting(s) by key
    *
-   * @param   String        key       (Optional) name of key
+   * @function get
+   * @memberof OSjs.Helpers.SettingsFragment#
    *
-   * @return  Mixed                   Either an entry or entire tree
+   * @param   {String}        [key]              Name of key
+   * @param   {Mixed}         [defaultValue]     Default value if result is undefined
    *
-   * @method  SettingsFragment::get()
+   * @return  {Mixed}                   Either an entry or entire tree
    */
-  SettingsFragment.prototype.get = function(key) {
-    if ( !key ) {
-      return this._settings;
-    }
-
-    return this._settings[key];
+  SettingsFragment.prototype.get = function(key, defaultValue) {
+    var ret = key ? this._settings[key] : this._settings;
+    return (typeof ret === 'undefined') ? defaultValue : ret;
   };
 
   /**
@@ -81,15 +82,17 @@
    *
    * If you set `key` to `null` you will write to the tree root.
    *
-   * @param   Mixed         key         The key
-   * @param   Mixed         value       The value
-   * @param   Mixed         save        Saves the pool (either boolean or callback function)
+   * @function set
+   * @memberof OSjs.Helpers.SettingsFragment#
    *
-   * @return  SettingsFragment          `this`
+   * @param   {Mixed}      key                   The key
+   * @param   {Mixed}      value                 The value
+   * @param   {Mixed}      save                  Saves the pool (either boolean or callback function)
+   * @param   {Boolean}    [triggerWatch=true]   Trigger change event for watchers
    *
-   * @method  SettingsFragment::set()
+   * @return  {OSjs.Helpers.SettingsFragment}  Itself `this`
    */
-  SettingsFragment.prototype.set = function(key, value, save) {
+  SettingsFragment.prototype.set = function(key, value, save, triggerWatch) {
     // Key here is actually the value
     // So you can update the whole object if you want.
     if ( key === null ) {
@@ -106,7 +109,9 @@
       OSjs.Core.getSettingsManager().save(this._pool, save);
     }
 
-    OSjs.Core.getSettingsManager().changed(this._pool);
+    if ( typeof triggerWatch === 'undefined' || triggerWatch === true ) {
+      OSjs.Core.getSettingsManager().changed(this._pool);
+    }
 
     return this;
   };
@@ -114,12 +119,13 @@
   /**
    * Saves the pool
    *
-   * @param   Function      callback        (optional) Callback function
+   * @function save
+   * @memberof OSjs.Helpers.SettingsFragment#
+   * @see OSjs.Core.SettingsManager#save
    *
-   * @return  boolean
+   * @param   {Function}      [callback]        Callback function
    *
-   * @see     SettingsManager::save()
-   * @method  SettingsFragment::save()
+   * @return  Boolean
    */
   SettingsFragment.prototype.save = function(callback) {
     return OSjs.Core.getSettingsManager().save(this._pool, callback);
@@ -142,9 +148,12 @@
   /**
    * Merges given tree with current one
    *
-   * @param     Object        defaults        The tree
+   * @function mergeDefaults
+   * @memberof OSjs.Helpers.SettingsFragment#
    *
-   * @return    SettingsFragment              `this`
+   * @param     {Object}        defaults        The tree
+   *
+   * @return  {OSjs.Helpers.SettingsFragment}  Itself `this`
    */
   SettingsFragment.prototype.mergeDefaults = function(defaults) {
     Utils.mergeObject(this._settings, defaults, {overwrite: false});
@@ -154,11 +163,13 @@
   /**
    * Creates a new SettingsFragment instance from given key
    *
-   * @param     String        key     Key name
+   * @function instance
+   * @memberof OSjs.Helpers.SettingsFragment#
+   * @throws {Error} If the given key does not exist
    *
-   * @return    SettingsFragment      New instance
+   * @param     {String}        key     Key name
    *
-   * @method    SettingsFragment::instance()
+   * @return  {OSjs.Helpers.SettingsFragment}  New instance
    */
   SettingsFragment.prototype.instance = function(key) {
     if (typeof this._settings[key] === 'undefined') {

@@ -33,15 +33,17 @@
   /**
    * An 'Alert' dialog
    *
-   * @param   args      Object        An object with arguments
-   * @param   callback  Function      Callback when done => fn(ev, button, result)
+   * @example
    *
-   * @option    args    title       String      Dialog title
-   * @option    args    message     String      Dialog message
+   * OSjs.API.createDialog('Alert', {}, fn);
    *
-   * @extends DialogWindow
-   * @class AlertDialog
-   * @api OSjs.Dialogs.Alert
+   * @param  {Object}          args              An object with arguments
+   * @param  {String}          args.title        Dialog title
+   * @param  {String}          args.message      Dialog message
+   * @param  {CallbackDialog}  callback          Callback when done
+   *
+   * @constructor Alert
+   * @memberof OSjs.Dialogs
    */
   function AlertDialog(args, callback) {
     args = Utils.argumentDefaults(args, {});
@@ -67,7 +69,6 @@
   // EXPORTS
   /////////////////////////////////////////////////////////////////////////////
 
-  OSjs.Dialogs = OSjs.Dialogs || {};
   OSjs.Dialogs.Alert = Object.seal(AlertDialog);
 
 })(OSjs.API, OSjs.Utils, OSjs.Core.DialogWindow);

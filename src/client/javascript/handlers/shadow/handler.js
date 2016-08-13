@@ -38,9 +38,6 @@
 (function(API, Utils, VFS) {
   'use strict';
 
-  window.OSjs  = window.OSjs || {};
-  OSjs.Core    = OSjs.Core   || {};
-
   /////////////////////////////////////////////////////////////////////////////
   // HANDLER
   /////////////////////////////////////////////////////////////////////////////
@@ -56,36 +53,7 @@
   ShadowHandler.prototype = Object.create(OSjs.Core._Handler.prototype);
   ShadowHandler.constructor = OSjs.Core._Handler;
 
-  /**
-   * Override default init() method
-   */
-  ShadowHandler.prototype.init = function(callback) {
-    var self = this;
-    return OSjs.Core._Handler.prototype.init.call(this, function() {
-      self.initLoginScreen(callback);
-    });
-  };
-
-  /**
-   * Shadow login api call
-   */
-  ShadowHandler.prototype.login = function(username, password, callback) {
-    return OSjs.Core._Handler.prototype.login.apply(this, arguments);
-  };
-
-  /**
-   * Shadow logout api call
-   */
-  ShadowHandler.prototype.logout = function(save, callback) {
-    return OSjs.Core._Handler.prototype.logout.apply(this, arguments);
-  };
-
-  /**
-   * Shadow settings api call
-   */
-  ShadowHandler.prototype.saveSettings = function(pool, storage, callback) {
-    return OSjs.Core._Handler.prototype.saveSettings.apply(this, arguments);
-  };
+  OSjs.Core._Handler.use.defaults(ShadowHandler);
 
   /////////////////////////////////////////////////////////////////////////////
   // EXPORTS

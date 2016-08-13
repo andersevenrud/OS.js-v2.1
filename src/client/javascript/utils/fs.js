@@ -30,9 +30,6 @@
 (function() {
   'use strict';
 
-  window.OSjs = window.OSjs || {};
-  OSjs.Utils  = OSjs.Utils  || {};
-
   /////////////////////////////////////////////////////////////////////////////
   // FS
   /////////////////////////////////////////////////////////////////////////////
@@ -40,9 +37,12 @@
   /**
    * Check the directory and rewrite it if running on file://
    *
-   * @param   String    path      Input path
+   * @function checkdir
+   * @memberof OSjs.Utils
    *
-   * @return  String              Output path
+   * @param   {String}    path      Input path
+   *
+   * @return  {String}              Output path
    */
   OSjs.Utils.checkdir = function(path) {
     if ( path && window.location.href.match(/^file\:\/\//) ) {
@@ -54,11 +54,12 @@
   /**
    * Get file extension of filename/path
    *
-   * @param   String    d       filename/path
+   * @function filext
+   * @memberof OSjs.Utils
    *
-   * @return  String            The file extension
+   * @param   {String}    d       filename/path
    *
-   * @api     OSjs.Utils.filext()
+   * @return  {String}            The file extension
    */
   OSjs.Utils.filext = function(d) {
     var ext = OSjs.Utils.filename(d).split('.').pop();
@@ -71,21 +72,28 @@
    * If you use this on a directory path, you will
    * get the parent
    *
-   * @param   String    f       filename/path
+   * @function dirname
+   * @memberof OSjs.Utils
    *
-   * @return  String            The resulted path
+   * @param   {String}    f       filename/path
    *
-   * @api     OSjs.Utils.dirname()
+   * @return  {String}            The resulted path
    */
   OSjs.Utils.dirname = function(f) {
 
     function _parentDir(p) {
-      var pstr   = p.split(/^(.*)\:\/\/(.*)/).filter(function(n) { return n !== ''; });
+      var pstr = p.split(/^(.*)\:\/\/(.*)/).filter(function(n) {
+        return n !== '';
+      });
+
       var args   = pstr.pop();
       var prot   = pstr.pop();
       var result = '';
 
-      var tmp = args.split('/').filter(function(n) { return n !== ''; });
+      var tmp = args.split('/').filter(function(n) {
+        return n !== '';
+      });
+
       if ( tmp.length ) {
         tmp.pop();
       }
@@ -94,6 +102,7 @@
       if ( !result.match(/^\//) ) {
         result = '/' + result;
       }
+
       if ( prot ) {
         result = prot + '://' + result;
       }
@@ -101,17 +110,18 @@
       return result;
     }
 
-    return f === '/' ? f : _parentDir(f.replace(/\/$/, ''));
+    return f.match(/^((.*)\:\/\/)?\/$/) ? f : _parentDir(f.replace(/\/$/, ''));
   };
 
   /**
    * Get filename from path
    *
-   * @param   String    p     Path
+   * @function filename
+   * @memberof OSjs.Utils
    *
-   * @return  String          The filename
+   * @param   {String}    p     Path
    *
-   * @api     OSjs.Utils.filename()
+   * @return  {String}          The filename
    */
   OSjs.Utils.filename = function(p) {
     return (p || '').replace(/\/$/, '').split('/').pop();
@@ -122,17 +132,21 @@
    *
    * Example return: '128 MB'
    *
-   * @param   int     bytes     Size in bytes
-   * @param   String  si        Use SI units ?
+   * @function humanFileSize
+   * @memberof OSjs.Utils
+   * @link http://stackoverflow.com/users/65387/mark
    *
-   * @return  String            Size
+   * @param   {Number}  bytes     Size in bytes
+   * @param   {String}  si        Use SI units ?
    *
-   * @link    http://stackoverflow.com/users/65387/mark
-   * @api     OSjs.Utils.humanFileSize()
+   * @return  {String}            Size
    */
   OSjs.Utils.humanFileSize = function(bytes, si) {
     var thresh = si ? 1000 : 1024;
-    if (bytes < thresh) { return bytes + ' B'; }
+    if (bytes < thresh) {
+      return bytes + ' B';
+    }
+
     var units = si ? ['kB','MB','GB','TB','PB','EB','ZB','YB'] : ['KiB','MiB','GiB','TiB','PiB','EiB','ZiB','YiB'];
     var u = -1;
     do {
@@ -145,11 +159,12 @@
   /**
    * Escape filename (removes invalid characters)
    *
-   * @param   String    n     Filename
+   * @function escapeFilename
+   * @memberof OSjs.Utils
    *
-   * @return  String          Escaped filename
+   * @param   {String}    n     Filename
    *
-   * @api     OSjs.Utils.escapeFilename()
+   * @return  {String}          Escaped filename
    */
   OSjs.Utils.escapeFilename = function(n) {
     return (n || '').replace(/[\|&;\$%@"<>\(\)\+,\*\/]/g, '').trim();
@@ -158,12 +173,13 @@
   /**
    * Replace file extension of filename
    *
-   * @param   String    filename      The filename
-   * @param   String    rep           New file extension (without dot)
+   * @function replaceFileExtension
+   * @memberof OSjs.Utils
    *
-   * @return  String                  New filename
+   * @param   {String}    filename      The filename
+   * @param   {String}    rep           New file extension (without dot)
    *
-   * @api     OSjs.Utils.replaceFileExtension()
+   * @return  {String}                  New filename
    */
   OSjs.Utils.replaceFileExtension = function(filename, rep) {
     var spl = filename.split('.');
@@ -175,12 +191,13 @@
   /**
    * Replace the filename of a path
    *
-   * @param   String    orig      The full path to file
-   * @param   String    newname   Replace with this filename
+   * @function replaceFilename
+   * @memberof OSjs.Utils
    *
-   * @return  String              The new path
+   * @param   {String}    orig      The full path to file
+   * @param   {String}    newname   Replace with this filename
    *
-   * @api     OSjs.Utils.replaceFilename()
+   * @return  {String}              The new path
    */
   OSjs.Utils.replaceFilename = function(orig, newname) {
     var spl = orig.split('/');
@@ -192,9 +209,11 @@
   /**
    * Joins arguments to a path (path.join)
    *
-   * @return  String
+   * @function pathJoin
+   * @memberof OSjs.Utils
    *
-   * @api OSjs.Utils.pathJoin()
+   * @param   {...String}   s   Input
+   * @return  {String}
    */
   OSjs.Utils.pathJoin = function() {
     var parts = [];
@@ -219,11 +238,12 @@
    *
    * This is used for example in text boxes to highlight the filename
    *
-   * @param   String    val     The path
+   * @function getFilenameRange
+   * @memberof OSjs.Utils
    *
-   * @return  Object            Range in form of {min: 0, max: 1}
+   * @param   {String}    val     The path
    *
-   * @api     OSjs.Utils.getFilenameRange()
+   * @return  {Object}            Range in form of min/max
    */
   OSjs.Utils.getFilenameRange = function(val) {
     val = val || '';
@@ -250,11 +270,12 @@
   /**
    * (Encode) Convert URL-safe String to Base64
    *
-   * @param   String      str     String
+   * @function btoaUrlsafe
+   * @memberof OSjs.Utils
    *
-   * @return  String              Base64 String
+   * @param   {String}      str     String
    *
-   * @api     OSjs.Utils.btoaUrlsafe()
+   * @return  {String}              Base64 String
    */
   OSjs.Utils.btoaUrlsafe = function(str) {
     return (!str || !str.length) ? '' : btoa(str)
@@ -266,11 +287,12 @@
   /**
    * (Decode) Convert Base64 to URL-safe String
    *
-   * @param   String      str     Base64 String
+   * @function atobUrlsafe
+   * @memberof OSjs.Utils
    *
-   * @return  String              String
+   * @param   {String}      str     Base64 String
    *
-   * @api     OSjs.Utils.atobUrlsafe()
+   * @return  {String}              String
    */
   OSjs.Utils.atobUrlsafe = function(str) {
     if ( str && str.length ) {
@@ -283,11 +305,12 @@
   /**
    * (Encode) Convert String to Base64 with UTF-8
    *
-   * @param   String      str     String
+   * @function btoaUtf
+   * @memberof OSjs.Utils
    *
-   * @return  String              Base64 String
+   * @param   {String}      str     String
    *
-   * @api     OSjs.Utils.btoaUtf()
+   * @return  {String}              Base64 String
    */
   OSjs.Utils.btoaUtf = function(str) { // Encode
     var _unescape = window.unescape || function(s) {
@@ -303,11 +326,12 @@
   /**
    * (Decode) Convert Base64 with UTF-8 to String
    *
-   * @param   String      str     Base64 String
+   * @function atobUtf
+   * @memberof OSjs.Utils
    *
-   * @return  String              String
+   * @param   {String}      str     Base64 String
    *
-   * @api     OSjs.Utils.atobUtf()
+   * @return  {String}              String
    */
   OSjs.Utils.atobUtf = function(str) { // Decode
     var _escape = window.escape || function(s) {
@@ -326,12 +350,13 @@
    * Check if this MIME type is inside list
    * This matches by regex
    *
-   * @param   String      mime      The mime string
-   * @param   Array       list      Array of regex matches
+   * @function checkAcceptMime
+   * @memberof OSjs.Utils
    *
-   * @return  boolean               If found
+   * @param   {String}      mime      The mime string
+   * @param   {Array}       list      Array of regex matches
    *
-   * @api     OSjs.Utils.checkAcceptMime()
+   * @return  {Boolean}               If found
    */
   OSjs.Utils.checkAcceptMime = function(mime, list) {
     if ( mime && list.length ) {

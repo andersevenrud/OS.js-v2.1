@@ -43,7 +43,10 @@ sudo npm install -g grunt-cli
 git clone https://github.com/os-js/OS.js.git
 cd OS.js
 npm install --production
-cp src/templates/conf/500-cpanel.json src/conf/500-cpanel.json
+
+# Important for Apache
+grunt apache-htaccess
+
 grunt
 ```
 
@@ -55,3 +58,9 @@ Now copy the entire `OS.js` directory to your host
 
 Open up http://yourhost.com/OS.js/dist/
 
+
+## Some notes
+
+If you have a directory with a folder named "www", "public_html" or similar, you can copy the dist directory into there and everything else in the root directory.
+
+This way you can run OS.js without the `/OS.js/dist/` in the URL.

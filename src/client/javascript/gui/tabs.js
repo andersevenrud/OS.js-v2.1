@@ -50,11 +50,14 @@
    *
    * A container with tabs for displaying content.
    *
-   * @event     select                    When tab has changed => fn(ev)
-   * @event     activate                  Alias of 'select'
+   * <pre><code>
+   *   event     select                    When tab has changed => fn(ev)
+   *   event     activate                  Alias of 'select'
+   * </code></pre>
    *
-   * @api OSjs.GUI.Elements.gui-tabs
-   * @class
+   * @constructs OSjs.GUI.Element
+   * @memberof OSjs.GUI.Elements
+   * @var gui-tabs
    */
   GUI.Elements['gui-tabs'] = {
     bind: function(el, evName, callback, params) {
@@ -65,6 +68,13 @@
         evName = '_' + evName;
       }
       Utils.$bind(el, evName, callback.bind(new GUI.Element(el)), params);
+    },
+    get: function(el, param, value) {
+      if ( param === 'current' || param === 'selected' ) {
+        var cur = el.querySelector('ul > li[class="gui-active"]');
+        return Utils.$index(cur);
+      }
+      return GUI.Helpers.getProperty(el, param);
     },
     build: function(el) {
       var tabs = document.createElement('ul');

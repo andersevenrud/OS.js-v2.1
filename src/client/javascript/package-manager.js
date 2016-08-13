@@ -31,7 +31,10 @@
 (function(Utils, VFS, API) {
   'use strict';
 
-  window.OSjs = window.OSjs || {};
+  /**
+   * This is the contents of a 'metadata.json' file for a package.
+   * @typedef Metadata
+   */
 
   /////////////////////////////////////////////////////////////////////////////
   // PACKAGE MANAGER
@@ -42,10 +45,18 @@
    *
    * For maintaining packages
    *
-   * You can only get an instance with `Core.getPackageManager()`
+   * <pre><b>
+   * YOU CAN ONLY GET AN INSTANCE WITH `Core.getPackageManager()`
+   * </b></pre>
    *
-   * @api  OSjs.Core.PackageManager
-   * @class
+   * @example
+   * OSjs.Core.getPackageManager()
+   *
+   * @summary Used for managing packages
+   *
+   * @constructor
+   * @memberof OSjs.Core
+   * @see OSjs.Core.getPackageManager
    */
   var PackageManager = (function() {
     var blacklist = [];
@@ -57,17 +68,16 @@
       /**
        * Load Metadata from server and set packages
        *
-       * @param  Function callback      callback
+       * @function load
+       * @memberof OSjs.Core.PackageManager#
        *
-       * @return void
-       *
-       * @method PackageManager::load()
+       * @param  {Function} callback      callback
        */
       load: function(callback) {
         var self = this;
         callback = callback || {};
 
-        console.info('PackageManager::load()');
+        console.debug('PackageManager::load()');
 
         function loadMetadata(cb) {
           self._loadMetadata(function(err) {
@@ -96,11 +106,10 @@
       /**
        * Internal method for loading all extensions
        *
-       * @param  Function callback      callback
+       * @function _loadExtensions
+       * @memberof OSjs.Core.PackageManager#
        *
-       * @return void
-       *
-       * @method PackageManager::_loadExtensions()
+       * @param  {Function} callback      callback
        */
       _loadExtensions: function(callback) {
         var preloads = [];
@@ -126,11 +135,10 @@
       /**
        * Internal method for loading all package metadata
        *
-       * @param  Function callback      callback
+       * @function _loadMetadata
+       * @memberof OSjs.Core.PackageManager#
        *
-       * @return void
-       *
-       * @method PackageManager::_loadMetadata()
+       * @param  {Function} callback      callback
        */
       _loadMetadata: function(callback) {
         var self = this;
@@ -188,11 +196,10 @@
       /**
        * Generates user-installed package metadata (on runtime)
        *
-       * @param  Function callback      callback
+       * @function generateUserMetadata
+       * @memberof OSjs.Core.PackageManager#
        *
-       * @return void
-       *
-       * @method PackageManager::generateUserMetadata()
+       * @param  {Function} callback      callback
        */
       generateUserMetadata: function(callback) {
         var dir = new OSjs.VFS.File(API.getConfig('PackageManager.UserPackages'));
@@ -276,9 +283,8 @@
       /**
        * Add a list of packages
        *
-       * @return void
-       *
-       * @method PackageManager::_addPackages()
+       * @function _addPackages
+       * @memberof OSjs.Core.PackageManager#
        */
       _addPackages: function(result, scope) {
         console.debug('PackageManager::_addPackages()', result);
@@ -316,12 +322,11 @@
       /**
        * Installs a package by ZIP
        *
-       * @param OSjs.VFS.File   file        The ZIP file
-       * @param Function        cb          Callback function
+       * @function install
+       * @memberof OSjs.Core.PackageManager#
        *
-       * @return void
-       *
-       * @method PackageManager::install()
+       * @param {OSjs.VFS.File}   file        The ZIP file
+       * @param {Function}        cb          Callback function
        */
       install: function(file, cb) {
         var root = API.getConfig('PackageManager.UserPackages');
@@ -364,11 +369,10 @@
       /**
        * Sets the package blacklist
        *
-       * @param   Array       list        List of package names
+       * @function setBlacklist
+       * @memberof OSjs.Core.PackageManager#
        *
-       * @return  vboid
-       *
-       * @method  PackageManager::setBlacklist()
+       * @param   {String[]}       list        List of package names
        */
       setBlacklist: function(list) {
         blacklist = list || [];
@@ -377,11 +381,12 @@
       /**
        * Get package by name
        *
-       * @param String    name      Package name
+       * @function getPackage
+       * @memberof OSjs.Core.PackageManager#
        *
-       * @return Object
+       * @param {String}    name      Package name
        *
-       * @method PackageManager::getPackage()
+       * @return {Metadata}
        */
       getPackage: function(name) {
         if ( typeof packages[name] !== 'undefined' ) {
@@ -393,11 +398,12 @@
       /**
        * Get all packages
        *
-       * @param boolean     filtered      Returns filtered list (default=true)
+       * @function getPackages
+       * @memberof OSjs.Core.PackageManager#
        *
-       * @return Array
+       * @param {Boolean}     [filtered=true]      Returns filtered list
        *
-       * @method PackageManager::getPackages()
+       * @return {Metadata[]}
        */
       getPackages: function(filtered) {
         var hidden = OSjs.Core.getSettingsManager().instance('Packages', {hidden: []}).get('hidden');
@@ -438,9 +444,12 @@
       /**
        * Get packages by Mime support type
        *
-       * @param String    mime      MIME string
+       * @function getPackagesByMime
+       * @memberof OSjs.Core.PackageManager#
        *
-       * @return  Array
+       * @param {String}    mime      MIME string
+       *
+       * @return  {Metadata[]}
        */
       getPackagesByMime: function(mime) {
         var list = [];
@@ -451,7 +460,7 @@
             var a = p[i];
             if ( a && a.mime ) {
               if ( Utils.checkAcceptMime(mime, a.mime) ) {
-                list.push(Object.freeze(Utils.cloneObject(i)));
+                list.push(i);
               }
             }
           }
@@ -462,12 +471,14 @@
       /**
        * Add a dummy package (useful for having shortcuts in the launcher menu)
        *
-       * @param   String      n             Name of your package
-       * @param   String      title         The display title
-       * @param   String      icon          The display icon
-       * @param   Function    fn            The function to run when the package tries to launch
+       * @function addDummyPackage
+       * @memberof OSjs.Core.PackageManager#
+       * @throws {Error} On invalid package name or callback
        *
-       * @return  void
+       * @param   {String}      n             Name of your package
+       * @param   {String}      title         The display title
+       * @param   {String}      icon          The display icon
+       * @param   {Function}    fn            The function to run when the package tries to launch
        */
       addDummyPackage: function(n, title, icon, fn) {
         if ( packages[n] || OSjs.Applications[n] ) {
@@ -499,8 +510,10 @@
   /**
    * Get the current PackageManager instance
    *
-   * @return PackageManager
-   * @api OSjs.Core.getPackageManager()
+   * @function getPackageManager
+   * @memberof OSjs.Core
+   *
+   * @return {OSjs.Core.PackageManager}
    */
   OSjs.Core.getPackageManager = function() {
     return PackageManager;

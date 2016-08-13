@@ -69,8 +69,8 @@
   /**
    * PanelItem: Clock
    */
-  var PanelItemClock = function(settings) {
-    PanelItem.apply(this, ['PanelItemClock PanelItemFill PanelItemRight', 'Clock', settings, {
+  function PanelItemClock(settings) {
+    PanelItem.apply(this, ['PanelItemClock corewm-panel-right', 'Clock', settings, {
       utc: false,
       interval: 1000,
       format: 'H:i:s',
@@ -78,9 +78,11 @@
     }]);
     this.clockInterval  = null;
     this.$clock = null;
-  };
+  }
 
   PanelItemClock.prototype = Object.create(PanelItem.prototype);
+  PanelItemClock.constructor = PanelItem;
+
   PanelItemClock.Name = 'Clock'; // Static name
   PanelItemClock.Description = 'View the time'; // Static description
   PanelItemClock.Icon = 'status/appointment-soon.png'; // Static icon
@@ -88,11 +90,11 @@
 
   PanelItemClock.prototype.createInterval = function() {
     var self = this;
-    var clock = this.$clock;
     var timeFmt = this._settings.get('format');
     var tooltipFmt = this._settings.get('tooltip');
 
     function update() {
+      var clock = self.$clock;
       if ( clock ) {
         var now = new Date();
         var t = OSjs.Helpers.Date.format(now, timeFmt);
@@ -102,10 +104,12 @@
         clock.setAttribute('aria-label', String(t));
         clock.title = d;
       }
+      clock = null;
     }
 
     function create(interval) {
       clearInterval(self.clockInterval);
+      self.clockInterval = clearInterval(self.clockInterval);
       self.clockInterval = setInterval(function() {
         update();
       }, interval);
@@ -118,10 +122,13 @@
   PanelItemClock.prototype.init = function() {
     var root = PanelItem.prototype.init.apply(this, arguments);
 
-    this.$clock = document.createElement('div');
+    this.$clock = document.createElement('span');
     this.$clock.innerHTML = '00:00:00';
-    root.setAttribute('role', 'button');
-    root.appendChild(this.$clock);
+    this.$clock.setAttribute('role', 'button');
+
+    var li = document.createElement('li');
+    li.appendChild(this.$clock);
+    this._$container.appendChild(li);
 
     this.createInterval();
 
@@ -138,6 +145,7 @@
 
   PanelItemClock.prototype.destroy = function() {
     this.clockInterval = clearInterval(this.clockInterval);
+    this.$clock = Utils.$remove(this.$clock);
     PanelItem.prototype.destroy.apply(this, arguments);
   };
 

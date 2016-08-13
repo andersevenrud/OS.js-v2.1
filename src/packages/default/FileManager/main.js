@@ -81,7 +81,7 @@
       };
 
       try {
-        VFS.createMountpoint(conn);
+        VFS.Helpers.createMountpoint(conn);
       } catch ( e ) {
         API.error(self._title, 'An error occured while trying to mount', e);
         console.warn(e.stack, e);
@@ -126,6 +126,39 @@
         self.changePath();
       }
     });
+
+    this._on('drop:upload', function(ev, item) {
+      app.upload(self.currentPath, item, self);
+    });
+
+    this._on('drop:file', function(ev, src) {
+      if ( Utils.dirname(src.path) !== self.currentPath ) {
+        var dst = new VFS.File((self.currentPath + '/' + src.filename));
+        app.copy(src, dst, self);
+      }
+    });
+
+    this._on('keydown', function(ev, keyCode, shiftKey, ctrlKey, altKey) {
+      if ( Utils.keyCombination(ev, 'CTRL+V') ) {
+        var clip = API.getClipboard();
+        if ( clip && (clip instanceof Array) ) {
+          clip.forEach(function(c) {
+            if ( c && (c instanceof VFS.File) ) {
+              var dst = new VFS.File(Utils.pathJoin(self.currentPath, c.filename));
+              app.copy(c, dst, self);
+            }
+          });
+        }
+      } else if ( ev.keyCode === Utils.Keys.DELETE ) {
+        app.rm(getSelected(self._find('FileView')), self);
+      }
+    });
+
+    this._on('destroy', function() {
+      try {
+        OSjs.Core.getSettingsManager().unwatch(self.settingsWatch);
+      } catch ( e ) {}
+    });
   }
 
   ApplicationFileManagerWindow.prototype = Object.create(Window.prototype);
@@ -160,29 +193,75 @@
     //
 
     var menuMap = {
-      MenuClose:          function() { self._close(); },
-      MenuCreateFile:     function() { app.mkfile(self.currentPath, self); },
-      MenuCreateDirectory:function() { app.mkdir(self.currentPath, self); },
-      MenuMount:          function() { app.mount(self); },
-      MenuUpload:         function() { app.upload(self.currentPath, null, self); },
-      MenuRename:         function() { app.rename(getSelected(view), self); },
-      MenuDelete:         function() { app.rm(getSelected(view), self); },
-      MenuInfo:           function() { app.info(getSelected(view), self); },
-      MenuOpen:           function() { app.open(getSelected(view), self); },
-      MenuDownload:       function() { app.download(getSelected(view), self); },
-      MenuRefresh:        function() { self.changePath(); },
-      MenuViewList:       function() { self.changeView('gui-list-view', true); },
-      MenuViewTree:       function() { self.changeView('gui-tree-view', true); },
-      MenuViewIcon:       function() { self.changeView('gui-icon-view', true); },
-      MenuShowSidebar:    function() { viewSide = self.toggleSidebar(!viewSide, true); },
-      MenuShowNavigation: function() { viewNav = self.toggleNavbar(!viewNav, true); },
-      MenuShowHidden:     function() { viewHidden = self.toggleHidden(!viewHidden, true); },
-      MenuShowExtension:  function() { viewExtension = self.toggleExtension(!viewExtension, true); },
-      MenuColumnFilename: function() { self.toggleColumn('filename', true); },
-      MenuColumnMIME:     function() { self.toggleColumn('mime', true); },
-      MenuColumnCreated:  function() { self.toggleColumn('ctime', true); },
-      MenuColumnModified: function() { self.toggleColumn('mtime', true); },
-      MenuColumnSize:     function() { self.toggleColumn('size', true); }
+      MenuClose: function() {
+        self._close();
+      },
+      MenuCreateFile: function() {
+        app.mkfile(self.currentPath, self);
+      },
+      MenuCreateDirectory:function() {
+        app.mkdir(self.currentPath, self);
+      },
+      MenuMount: function() {
+        app.mount(self);
+      },
+      MenuUpload: function() {
+        app.upload(self.currentPath, null, self);
+      },
+      MenuRename: function() {
+        app.rename(getSelected(view), self);
+      },
+      MenuDelete: function() {
+        app.rm(getSelected(view), self);
+      },
+      MenuInfo: function() {
+        app.info(getSelected(view), self);
+      },
+      MenuOpen: function() {
+        app.open(getSelected(view), self);
+      },
+      MenuDownload: function() {
+        app.download(getSelected(view), self);
+      },
+      MenuRefresh: function() {
+        self.changePath();
+      },
+      MenuViewList: function() {
+        self.changeView('gui-list-view', true);
+      },
+      MenuViewTree: function() {
+        self.changeView('gui-tree-view', true);
+      },
+      MenuViewIcon: function() {
+        self.changeView('gui-icon-view', true);
+      },
+      MenuShowSidebar: function() {
+        viewSide = self.toggleSidebar(!viewSide, true);
+      },
+      MenuShowNavigation: function() {
+        viewNav = self.toggleNavbar(!viewNav, true);
+      },
+      MenuShowHidden: function() {
+        viewHidden = self.toggleHidden(!viewHidden, true);
+      },
+      MenuShowExtension: function() {
+        viewExtension = self.toggleExtension(!viewExtension, true);
+      },
+      MenuColumnFilename: function() {
+        self.toggleColumn('filename', true);
+      },
+      MenuColumnMIME: function() {
+        self.toggleColumn('mime', true);
+      },
+      MenuColumnCreated: function() {
+        self.toggleColumn('ctime', true);
+      },
+      MenuColumnModified: function() {
+        self.toggleColumn('mtime', true);
+      },
+      MenuColumnSize: function() {
+        self.toggleColumn('size', true);
+      }
     };
 
     function menuEvent(ev) {
@@ -333,7 +412,7 @@
         return false;
       }
 
-      API.open(new VFS.File(f.data.path, f.data.mime));
+      API.open(new VFS.File(f.data));
 
       return true;
     });
@@ -351,7 +430,7 @@
       this.renderSideView();
     }
 
-    VFS.getModules({special: true}).forEach(function(m, i) {
+    OSjs.Core.getMountManager().getModules({special: true}).forEach(function(m, i) {
       if ( path.match(m.module.match) ) {
         found = m.module.root;
       }
@@ -367,7 +446,7 @@
     }
 
     var sideViewItems = [];
-    VFS.getModules({special: true}).forEach(function(m, i) {
+    OSjs.Core.getMountManager().getModules({special: true}).forEach(function(m, i) {
       if ( m.module.dynamic && !m.module.mounted() ) {
         return;
       }
@@ -399,26 +478,21 @@
     side.add(sideViewItems);
   };
 
-  ApplicationFileManagerWindow.prototype.vfsEvent = function(args) {
-    if ( args.type === 'mount' || args.type === 'unmount' ) {
-      if ( args.module ) {
-        var m = OSjs.VFS.Modules[args.module];
-        if ( m ) {
-          if ( args.type === 'unmount' ) {
-            if ( this.currentPath.match(m.match) ) {
-              var path = API.getDefaultPath();
-              this.changePath(path);
-            }
-          }
-          this.updateSideView(m);
+  ApplicationFileManagerWindow.prototype.onMountEvent = function(module, msg) {
+    var m = OSjs.Core.getMountManager().getModule(module);
+    if ( m ) {
+      if ( msg === 'vfs:unmount' ) {
+        if ( this.currentPath.match(m.match) ) {
+          this.changePath(API.getDefaultPath());
         }
       }
-    } else {
-      if ( args.file && this.currentPath === Utils.dirname(args.file.path) ) {
-        this.changePath(null);
-      } else if ( args.dir && this.currentPath === args.dir ) {
-        this.changePath(null);
-      }
+      this.updateSideView(m);
+    }
+  };
+
+  ApplicationFileManagerWindow.prototype.onFileEvent = function(chk) {
+    if ( (this.currentPath === Utils.dirname(chk.path)) || (this.currentPath === chk.path) ) {
+      this.changePath(null);
     }
   };
 
@@ -559,7 +633,7 @@
     var opts = {scandir: {}};
     opts.scandir[opt] = toggle;
 
-    vfsOptions.set(null, opts);
+    vfsOptions.set(null, opts, null, false);
     view.set(key, toggle);
 
     if ( set ) {
@@ -639,72 +713,6 @@
     viewMenu.set('checked', 'MenuColumnSize', viewColumns.indexOf('size') >= 0);
   };
 
-  ApplicationFileManagerWindow.prototype._onDndEvent = function(ev, type, item, args) {
-    if ( !Window.prototype._onDndEvent.apply(this, arguments) ) {
-      return false;
-    }
-
-    if ( type === 'filesDrop' && item ) {
-      return this.onDropUpload(ev, item);
-    } else if ( type === 'itemDrop' && item && item.type === 'file' && item.data ) {
-      return this.onDropItem(ev, item);
-    }
-
-    return true;
-  };
-
-  ApplicationFileManagerWindow.prototype.onDropItem = function(ev, item) {
-    if ( Utils.dirname(item.data.path) === this.currentPath ) {
-      return;
-    }
-
-    var src = new VFS.File(item.data);
-    var dst = new VFS.File((this.currentPath + '/' + src.filename));
-    this._app.copy(src, dst, this);
-  };
-
-  ApplicationFileManagerWindow.prototype.onDropUpload = function(ev, files) {
-    this._app.upload(this.currentPath, files, this);
-    return true;
-  };
-
-  ApplicationFileManagerWindow.prototype.destroy = function() {
-    try {
-      OSjs.Core.getSettingsManager().unwatch(this.settingsWatch);
-    } catch ( e ) {}
-    Window.prototype.destroy.apply(this, arguments);
-  };
-
-  ApplicationFileManagerWindow.prototype._onKeyEvent = function(ev, type) {
-    var self = this;
-
-    function paste() {
-      var clip = API.getClipboard();
-      if ( clip && (clip instanceof Array) ) {
-        clip.forEach(function(c) {
-          if ( c && (c instanceof VFS.File) ) {
-            var dst = new VFS.File((self.currentPath + '/' + c.filename));
-            self._app.copy(c, dst, self);
-          }
-        });
-      }
-    }
-
-    if ( Window.prototype._onKeyEvent.apply(this, arguments) ) {
-      if ( type === 'keydown' ) {
-        if ( ev.keyCode === Utils.Keys.V && ev.ctrlKey ) {
-          paste();
-        } else if ( ev.keyCode === Utils.Keys.DELETE ) {
-          var view = this._scheme.find(this, 'FileView');
-          self._app.rm(getSelected(view), self);
-        }
-      }
-
-      return true;
-    }
-    return false;
-  };
-
   /////////////////////////////////////////////////////////////////////////////
   // APPLICATION
   /////////////////////////////////////////////////////////////////////////////
@@ -728,22 +736,28 @@
 
     var url = API.getApplicationResource(this, './scheme.html');
     var scheme = GUI.createScheme(url);
+
+    this._on('vfs', function(msg, obj) {
+      var win = self._getMainWindow();
+      if ( win ) {
+        if ( msg === 'vfs:mount' || msg === 'vfs:unmount' ) {
+          win.onMountEvent(obj, msg);
+        } else {
+          if ( obj.destination ) {
+            win.onFileEvent(obj.destination);
+            win.onFileEvent(obj.source);
+          } else {
+            win.onFileEvent(obj);
+          }
+        }
+      }
+    });
+
     scheme.load(function(error, result) {
       self._addWindow(new ApplicationFileManagerWindow(self, metadata, scheme, path, settings));
     });
 
     this._setScheme(scheme);
-  };
-
-  ApplicationFileManager.prototype._onMessage = function(obj, msg, args) {
-    Application.prototype._onMessage.apply(this, arguments);
-
-    // If any outside VFS actions were performed, refresh!
-
-    var win = this._getWindow('ApplicationFileManagerWindow');
-    if ( win && msg === 'vfs' && args.source !== this.__pid ) {
-      win.vfsEvent(args);
-    }
   };
 
   ApplicationFileManager.prototype.download = function(items) {
@@ -769,10 +783,12 @@
     win._toggleDisabled(true);
     API.createDialog('Confirm', {
       buttons: ['yes', 'no'],
-      message: Utils.format(OSjs.Applications.ApplicationFileManager._('Delete <span>{0}</span> ?'), files)
+      message: Utils.format(OSjs.Applications.ApplicationFileManager._('Delete **{0}** ?'), files)
     }, function(ev, button) {
       win._toggleDisabled(false);
-      if ( button !== 'ok' && button !== 'yes' ) { return; }
+      if ( button !== 'ok' && button !== 'yes' ) {
+        return;
+      }
 
       items.forEach(function(item) {
         item = new VFS.File(item);
@@ -822,7 +838,7 @@
 
     items.forEach(function(item) {
       var dialog = API.createDialog('Input', {
-        message: OSjs.Applications.ApplicationFileManager._('Rename <span>{0}</span>', item.filename),
+        message: OSjs.Applications.ApplicationFileManager._('Rename **{0}**', item.filename),
         value: item.filename
       }, function(ev, button, result) {
         if ( button === 'ok' && result ) {
@@ -849,7 +865,7 @@
 
     API.createDialog('Input', {
       value: 'My new File',
-      message: OSjs.Applications.ApplicationFileManager._('Create a new file in <span>{0}</span>', dir)
+      message: OSjs.Applications.ApplicationFileManager._('Create a new file in **{0}**', dir)
     }, function(ev, button, result) {
       if ( !result ) {
         win._toggleDisabled(false);
@@ -879,7 +895,7 @@
 
     win._toggleDisabled(true);
     API.createDialog('Input', {
-      message: OSjs.Applications.ApplicationFileManager._('Create a new directory in <span>{0}</span>', dir)
+      message: OSjs.Applications.ApplicationFileManager._('Create a new directory in **{0}**', dir)
     }, function(ev, button, result) {
       if ( !result ) {
         win._toggleDisabled(false);
@@ -897,7 +913,7 @@
   ApplicationFileManager.prototype.copy = function(src, dest, win) {
     var self = this;
     var dialog = API.createDialog('FileProgress', {
-      message: OSjs.Applications.ApplicationFileManager._('Copying <span>{0}</span> to <span>{1}</span>', src.filename, dest.path)
+      message: OSjs.Applications.ApplicationFileManager._('Copying **{0}** to **{1}**', src.filename, dest.path)
     }, function() {
     }, win);
 
@@ -914,7 +930,7 @@
         API.error(API._('ERR_GENERIC_APP_FMT', self.__label), API._('ERR_GENERIC_APP_REQUEST'), error);
         return;
       }
-    }, {dialog: dialog});
+    }, {dialog: dialog}, this._app);
   };
 
   ApplicationFileManager.prototype.upload = function(dest, files, win) {

@@ -38,7 +38,7 @@ class MIME
   protected static $instance;
 
   protected function __construct() {
-    $file = sprintf("%s/src/conf/%s", ROOTDIR, "130-mime.json");
+    $file = sprintf("%s/src/conf/%s", ROOTDIR, "300-mime.json");
 
     if ( file_exists($file) ) {
       $arr = (array)json_decode(file_get_contents($file), true);
@@ -66,6 +66,46 @@ class FS
 
   const DATE_FORMAT = "Y-m-d\TH:i:s.Z\Z";
 
+  protected static function _scandirIter($dirname, $root, $protocol, $f) {
+    $opath = implode("/", Array($root, $f));
+    if ( $f == ".." ) {
+      $tpath = truepath(implode("/", Array($dirname, $f)), false);
+    } else {
+      $tpath = implode("/", Array($dirname, $f));
+    }
+    $vpath = sprintf("%s%s", $protocol, $tpath); //$on_root ? preg_replace("/^\//", "", $tpath) : $tpath);
+
+    $iter = Array(
+      "filename" => htmlspecialchars(basename($f)),
+      "path"     => $vpath,
+      "size"     => 0,
+      "mime"     => null,
+      "type"     => is_dir($opath) ? "dir" : "file",
+      "ctime"    => null,
+      "mtime"    => null
+    );
+
+    if ( ($mtime = @filemtime($opath)) > 0 ) {
+      $iter["mtime"] = date(self::DATE_FORMAT, $mtime);
+    }
+    if ( ($ctime = @filectime($opath)) > 0 ) {
+      $iter["ctime"] = date(self::DATE_FORMAT, $ctime);
+    }
+
+    if ( $iter["type"] == "file" ) {
+      if ( is_writable($opath) || is_readable($opath) ) {
+        if ( $mime = fileMime($opath) ) {
+          $iter["mime"] = $mime;
+        }
+        if ( ($size = filesize($opath)) !== false ) {
+          $iter["size"] = $size;
+        }
+      }
+    }
+
+    return $iter;
+  }
+
   public static function scandir($scandir, Array $opts = Array()) {
     list($dirname, $root, $protocol) = getRealPath($scandir);
 
@@ -75,44 +115,7 @@ class FS
       if ( ($files = scandir($root)) !== false ) {
         foreach ( $files as $f ) {
           if ( $f == "." || ($f == ".." && $on_root) ) continue;
-
-          $opath = implode("/", Array($root, $f));
-          if ( $f == ".." ) {
-            $tpath = truepath(implode("/", Array($dirname, $f)), false);
-          } else {
-            $tpath = implode("/", Array($dirname, $f));
-          }
-          $vpath = sprintf("%s%s", $protocol, $tpath); //$on_root ? preg_replace("/^\//", "", $tpath) : $tpath);
-
-          $iter = Array(
-            "filename" => htmlspecialchars($f),
-            "path"     => $vpath,
-            "size"     => 0,
-            "mime"     => null,
-            "type"     => is_dir($opath) ? "dir" : "file",
-            "ctime"    => null,
-            "mtime"    => null
-          );
-
-          if ( ($mtime = @filemtime($opath)) > 0 ) {
-            $iter["mtime"] = date(self::DATE_FORMAT, $mtime);
-          }
-          if ( ($ctime = @filectime($opath)) > 0 ) {
-            $iter["ctime"] = date(self::DATE_FORMAT, $ctime);
-          }
-
-          if ( $iter["type"] == "file" ) {
-            if ( is_writable($opath) || is_readable($opath) ) {
-              if ( $mime = fileMime($opath) ) {
-                $iter["mime"] = $mime;
-              }
-              if ( ($size = filesize($opath)) !== false ) {
-                $iter["size"] = $size;
-              }
-            }
-          }
-
-          $result[] = $iter;
+          $result[] = self::_scandirIter($dirname, $root, $protocol, $f);
         }
       }
     } else {
@@ -272,6 +275,51 @@ class FS
       throw new Exception("Failed to create directory");
     }
     return true;
+  }
+
+  public static function freeSpace($fname) {
+    list($dirname, $root, $protocol, $fname) = getRealPath($fname);
+    if ( $protocol === "osjs://" ) throw new Exception("Not allowed");
+    return disk_free_space($fname);
+  }
+
+  public static function find($path, $args) {
+    list($dirname, $root, $protocol, $dname) = getRealPath($path);
+
+    $result = Array();
+    $p = preg_replace('/\/$/', '', $dname);
+    $limit = isset($args['limit']) ? (int) $args['limit'] : 0;
+
+    if ( empty($args['query']) ) {
+      throw new Exception('No query was given');
+    }
+
+    if ( empty($args['recursive']) || !$args['recursive'] ) {
+      if ( ($files = scandir($root)) !== false ) {
+        foreach ( $files as $f ) {
+          if ( $f == "." || $f == ".." ) continue;
+
+          if ( stristr($f, $args['query']) !== false ) {
+            $result[] = self::_scandirIter($dirname, $root, $protocol, $f);
+          }
+        }
+      }
+
+      return $result;
+    }
+
+    $objects = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($p), RecursiveIteratorIterator::SELF_FIRST);
+    foreach( $objects as $name => $object ) {
+      if ( stristr($name, $args['query']) !== false ) {
+        $result[] = self::_scandirIter($dirname, $root, $protocol, substr($name, strlen($dname)));
+      }
+
+      if ( $limit && sizeof($result) >= $limit ) {
+        break;
+      }
+    }
+
+    return $result;
   }
 
   public static function fileinfo($fname) {

@@ -30,20 +30,6 @@
 (function(WindowManager, Window, GUI, Utils, API, VFS) {
   'use strict';
 
-  var DefaultCategories = {
-    development : {icon: 'categories/package_development.png', title: 'Development'},
-    education   : {icon: 'categories/applications-sience.png', title: 'Education'},
-    games       : {icon: 'categories/package_games.png',       title: 'Games'},
-    graphics    : {icon: 'categories/package_graphics.png',    title: 'Graphics'},
-    network     : {icon: 'categories/package_network.png',     title: 'Network'},
-    multimedia  : {icon: 'categories/package_multimedia.png',  title: 'Multimedia'},
-    office      : {icon: 'categories/package_office.png',      title: 'Office'},
-    system      : {icon: 'categories/package_system.png',      title: 'System'},
-    utilities   : {icon: 'categories/package_utilities.png',   title: 'Utilities'},
-    arduino     : {icon: 'arduino.png',                        title: 'Arduino'},
-    unknown     : {icon: 'categories/applications-other.png',  title: 'Other'}
-  };
-
   function _createIcon(aiter, aname, arg) {
     return API.getIcon(aiter.icon, arg, aiter);
   }
@@ -53,6 +39,8 @@
    */
   function doBuildCategoryMenu(ev) {
     var apps = OSjs.Core.getPackageManager().getPackages();
+    var wm = OSjs.Core.getWindowManager();
+    var cfgCategories = wm.getSetting('menu');
 
     function createEvent(iter) {
       return function(el) {
@@ -73,7 +61,7 @@
 
     var cats = {};
 
-    Object.keys(DefaultCategories).forEach(function(c) {
+    Object.keys(cfgCategories).forEach(function(c) {
       cats[c] = [];
     });
 
@@ -101,8 +89,8 @@
 
       if ( submenu.length ) {
         list.push({
-          title: OSjs.Applications.CoreWM._(DefaultCategories[c].title),
-          icon:  API.getIcon(DefaultCategories[c].icon, '16x16'),
+          title: OSjs.Applications.CoreWM._(cfgCategories[c].title),
+          icon:  API.getIcon(cfgCategories[c].icon, '16x16'),
           menu:  submenu
         });
       }
@@ -130,7 +118,7 @@
       var txt = document.createElement('div');
       txt.appendChild(document.createTextNode(iter.name)); //.replace(/([^\s-]{8})([^\s-]{8})/, '$1-$2')));
 
-      Utils.$bind(entry, 'mousedown', function(ev) {
+      Utils.$bind(entry, 'click', function(ev) {
         ev.stopPropagation();
         API.launch(a);
         API.blurMenu();
@@ -157,7 +145,9 @@
   };
 
   ApplicationMenu.prototype.show = function(pos) {
-    if ( !this.$element ) { return; }
+    if ( !this.$element ) {
+      return;
+    }
 
     if ( !this.$element.parentNode ) {
       document.body.appendChild(this.$element);
@@ -195,15 +185,26 @@
     if ( (wm && wm.getSetting('useTouchMenu') === true) ) {
       var inst = new ApplicationMenu();
       var pos = {x: ev.clientX, y: ev.clientY};
+
       if ( ev.target ) {
-        var target = ev.target;
-        if ( target.tagName === 'IMG' ) {
-          target = target.parentNode;
-        }
-        var rect = Utils.$position(target, document.body);
+        var rect = Utils.$position(ev.target, document.body);
         if ( rect.left && rect.top && rect.width && rect.height ) {
-          pos.x = rect.left - (rect.width / 2) + 4;
-          pos.y = rect.top + rect.height + 4;
+          pos.x = rect.left - (rect.width / 2);
+
+          if ( pos.x <= 16 ) {
+            pos.x = 0; // Snap to left
+          }
+
+          var panel = Utils.$parent(ev.target, function(node) {
+            return node.tagName.toLowerCase() === 'corewm-panel';
+          });
+
+          if ( panel ) {
+            var prect = Utils.$position(panel);
+            pos.y = prect.top + prect.height;
+          } else {
+            pos.y = rect.top + rect.height;
+          }
         }
       }
       API.createMenu(null, pos, inst);

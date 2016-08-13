@@ -33,15 +33,17 @@
   /**
    * An 'Color Chooser' dialog
    *
-   * @param   args      Object        An object with arguments
-   * @param   callback  Function      Callback when done => fn(ev, button, result)
+   * @example
    *
-   * @option    args    title       String      Dialog title
-   * @option    args    color       Mixed       Either hex string or rbg object
+   * OSjs.API.createDialog('Color', {}, fn);
    *
-   * @extends DialogWindow
-   * @class ColorDialog
-   * @api OSjs.Dialogs.Color
+   * @param  {Object}          args              An object with arguments
+   * @param  {String}          args.title        Dialog title
+   * @param  {Mixed}           args.color        Either hex string or rbg object
+   * @param  {CallbackDialog}  callback          Callback when done
+   *
+   * @constructor Color
+   * @memberof OSjs.Dialogs
    */
   function ColorDialog(args, callback) {
     args = Utils.argumentDefaults(args, {
@@ -146,7 +148,6 @@
   // EXPORTS
   /////////////////////////////////////////////////////////////////////////////
 
-  OSjs.Dialogs = OSjs.Dialogs || {};
   OSjs.Dialogs.Color = Object.seal(ColorDialog);
 
 })(OSjs.API, OSjs.Utils, OSjs.Core.DialogWindow);

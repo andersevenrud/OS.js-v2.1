@@ -66,28 +66,16 @@
       "type": "javascript"
     },
     {
+      "src": "panelitems/search.js",
+      "type": "javascript"
+    },
+    {
       "src": "main.js",
       "type": "javascript"
     },
     {
       "src": "locales.js",
       "type": "javascript"
-    },
-    {
-      "src": "panelitems/clock.css",
-      "type": "stylesheet"
-    },
-    {
-      "src": "panelitems/buttons.css",
-      "type": "stylesheet"
-    },
-    {
-      "src": "panelitems/notificationarea.css",
-      "type": "stylesheet"
-    },
-    {
-      "src": "panelitems/windowlist.css",
-      "type": "stylesheet"
     },
     {
       "src": "main.css",

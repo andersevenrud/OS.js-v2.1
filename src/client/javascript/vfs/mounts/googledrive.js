@@ -30,6 +30,13 @@
 (function(Utils, API) {
   'use strict';
 
+  /**
+   * @namespace GoogleDrive
+   * @memberof OSjs.VFS.Modules
+   */
+
+  var gapi = window.gapi = window.gapi  || {};
+
   // https://developers.google.com/drive/web/quickstart/quickstart-js
   // https://developers.google.com/+/web/signin/javascript-flow
   // https://developers.google.com/drive/realtime/realtime-quickstart
@@ -39,12 +46,6 @@
   // https://developers.google.com/drive/v2/reference/files/list
   // http://stackoverflow.com/questions/22092402/python-google-drive-api-list-the-entire-drive-file-tree
   // https://developers.google.com/drive/web/folder
-
-  var gapi = window.gapi = window.gapi  || {};
-  var OSjs = window.OSjs = window.OSjs  || {};
-
-  OSjs.VFS          = OSjs.VFS          || {};
-  OSjs.VFS.Modules  = OSjs.VFS.Modules  || {};
 
   // If the user idles the connection for this amount of time, the cache will automatically clean
   // forcing an update. If user uploads from another place etc. OS.js will make sure to fetch these
@@ -94,7 +95,7 @@
         body: createBody(data.toBase64())
       });
     } else {
-      OSjs.VFS.abToBinaryString(data, contentType, function(error, response) {
+      OSjs.VFS.Helpers.abToBinaryString(data, contentType, function(error, response) {
         callback(error, error ? false : {
           contentType: reqContentType,
           body: createBody(btoa(response))
@@ -195,18 +196,20 @@
 
     if ( list ) {
       list.forEach(function(iter, i) {
-        if ( !iter ) { return; }
+        if ( !iter ) {
+          return;
+        }
         result.push(createItem(iter, i));
       });
     }
-    return result ? OSjs.VFS.filterScandir(result, options) : [];
+    return result ? OSjs.VFS.Helpers.filterScandir(result, options) : [];
   }
 
   /**
    * Get all files in a directory
    */
   function getAllDirectoryFiles(item, callback) {
-    console.log('GoogleDrive::*getAllDirectoryFiles()', item);
+    console.debug('GoogleDrive::*getAllDirectoryFiles()', item);
 
     function retrieveAllFiles(cb) {
       if ( _clearCacheTimeout ) {
@@ -272,7 +275,7 @@
         }
       });
 
-      var resolves = root.replace(OSjs.VFS.Modules.GoogleDrive.match, '').replace(/^\/+/, '').split('/');
+      var resolves = Utils.getRelativeURL(root).replace(/^\/+/, '').split('/');
       resolves = resolves.filter(function(el) {
         return el !== '';
       });
@@ -291,14 +294,7 @@
             quotaBytesUsed: 0,
             mimeType: 'application/vnd.google-apps.folder'
           });
-        }/* else {
-          result.push({
-            title: 'Trash',
-            path: OSjs.VFS.Modules.GoogleDrive.root + '.trash',
-            id: null,
-            mimeType: 'application/vnd.google-apps.trash'
-          });
-        }*/
+        }
 
         list.forEach(function(iter) {
           if ( iter && parentList[iter.id] && parentList[iter.id].indexOf(foundId) !== -1 ) {
@@ -366,7 +362,7 @@
             _treeCache = null;
           }, CACHE_CLEAR_TIMEOUT);
 
-          console.log('GoogleDrive::*getAllDirectoryFiles()', '=>', response);
+          console.debug('GoogleDrive::*getAllDirectoryFiles()', '=>', response);
           callback(error, response, root);
         });
       });
@@ -739,7 +735,8 @@
       });
     }
 
-    if ( Utils.dirname(dir.path) !== OSjs.VFS.Modules.GoogleDrive.root ) {
+    var mm = OSjs.Core.getMountManager();
+    if ( Utils.dirname(dir.path) !== Utils.getRelativeURL(mm.getModuleProperty('GoogleDrive', 'root')) ) {
       getParentPathId(dir, function(error, id) {
         console.debug('GoogleDrive::mkdir()->getParentPathId()', id, 'of', dir);
         if ( error || !id ) {
@@ -821,6 +818,10 @@
     });
   };
 
+  GoogleDriveStorage.freeSpace = function(root, callback) {
+    callback(false, -1);
+  };
+
   /////////////////////////////////////////////////////////////////////////////
   // WRAPPERS
   /////////////////////////////////////////////////////////////////////////////
@@ -855,7 +856,7 @@
         gapi.client.load('drive', 'v2', function() {
           _isMounted = true;
 
-          API.message('vfs', {type: 'mount', module: 'GoogleDrive', source: null});
+          API.message('vfs:mount', 'GoogleDrive', {source: null});
 
           callback(GoogleDriveStorage);
         });
@@ -892,18 +893,19 @@
 
   /**
    * This is the Google Drive VFS Abstraction for OS.js
-   *
-   * @api OSjs.VFS.Modules.GoogleDrive
    */
-  OSjs.VFS.Modules.GoogleDrive = OSjs.VFS.Modules.GoogleDrive || OSjs.VFS._createMountpoint({
+  OSjs.Core.getMountManager()._add({
     readOnly: false,
+    name: 'GoogleDrive',
+    transport: 'GoogleDrive',
     description: 'Google Drive',
     visible: true,
+    searchable: false,
     unmount: function(cb) {
       // FIXME: Should we sign out here too ?
       cb = cb || function() {};
       _isMounted = false;
-      API.message('vfs', {type: 'unmount', module: 'GoogleDrive', source: null});
+      API.message('vfs:unmount', 'GoogleDrive', {source: null});
       cb(false, true);
     },
     mounted: function() {

@@ -27,11 +27,13 @@
  * @author  Anders Evenrud <andersevenrud@gmail.com>
  * @licence Simplified BSD License
  */
-(function(API, Utils, VFS) {
+(function(API, Utils, VFS, GUI) {
   'use strict';
 
-  window.OSjs = window.OSjs || {};
-  OSjs.GUI = OSjs.GUI || {};
+  /**
+   * @namespace Elements
+   * @memberof OSjs.GUI
+   */
 
   /**
    * Wrapper for getting which element to focus/blur
@@ -58,12 +60,82 @@
   /**
    * Base UIElement Class
    *
-   * @api OSjs.GUI.Element
-   * @class Element
+   * <pre><code>
+   * Available Elements:
+   *
+   * - gui-color-box
+   * - gui-color-swatch
+   * - gui-iframe
+   * - gui-progress-bar
+   * - gui-statusbar
+   * - gui-menu-entry
+   * - gui-menu
+   * - gui-menu-bar
+   * - gui-tabs
+   * - gui-label
+   * - gui-textarea
+   * - gui-text
+   * - gui-password
+   * - gui-file-upload
+   * - gui-radio
+   * - gui-checkbox
+   * - gui-switch
+   * - gui-button
+   * - gui-select
+   * - gui-select-list
+   * - gui-slider
+   * - gui-input-modal
+   * - gui-audio
+   * - gui-video
+   * - gui-image
+   * - gui-canvas
+   * - gui-file-view
+   * - gui-tree-view
+   * - gui-list-view
+   * - gui-icon-view
+   * - gui-richtext
+   * - gui-paned-view
+   * - gui-paned-view-container
+   * - gui-button-bar
+   * - gui-toolbar
+   * - gui-grid
+   * - gui-grid-row
+   * - gui-grid-entry
+   * - gui-vbox
+   * - gui-vbox-container
+   * - gui-hbox
+   * - gui-hbox-container
+   * - gui-expander
+   * </code></pre>
+   *
+   * @summary The Class used for all UI Elements.
+   *
+   * @param {Node}      el      DOM Node
+   * @param {String}    [q]     Query that element came from
+   *
+   * @link https://os.js.org/doc/tutorials/gui.html
+   *
+   * @constructor Element
+   * @memberof OSjs.GUI
    */
   function UIElement(el, q) {
+
+    /**
+     * The DOM Node
+     * @name $element
+     * @memberof OSjs.GUI.Element#
+     * @type {Node}
+     */
     this.$element = el || null;
+
+    /**
+     * The DOM Tag Name
+     * @name tagName
+     * @memberof OSjs.GUI.Element#
+     * @type {String}
+     */
     this.tagName = el ? el.tagName.toLowerCase() : null;
+
     this.oldDisplay = null;
 
     if ( !el ) {
@@ -74,8 +146,8 @@
   /**
    * Removes element from the DOM
    *
-   * @method Element::remove()
-   * @return void
+   * @function remove
+   * @memberof OSjs.GUI.Element#
    */
   UIElement.prototype.remove = function() {
     this.$element = Utils.$remove(this.$element);
@@ -84,8 +156,10 @@
   /**
    * Empties the DOM element
    *
-   * @method Element::empty()
-   * @return Element this
+   * @function empty
+   * @memberof OSjs.GUI.Element#
+   *
+   * @return {OSjs.GUI.Element} The current instance (this)
    */
   UIElement.prototype.empty = function() {
     Utils.$empty(this.$element);
@@ -95,8 +169,10 @@
   /**
    * Blur (unfocus)
    *
-   * @method Element::blur()
-   * @return Element this
+   * @function blur
+   * @memberof OSjs.GUI.Element#
+   *
+   * @return {OSjs.GUI.Element} The current instance (this)
    */
   UIElement.prototype.blur = function() {
     if ( this.$element ) {
@@ -111,8 +187,10 @@
   /**
    * Focus (focus)
    *
-   * @method Element::focus()
-   * @return Element this
+   * @function focus
+   * @memberof OSjs.GUI.Element#
+   *
+   * @return {OSjs.GUI.Element} The current instance (this)
    */
   UIElement.prototype.focus = function() {
     if ( this.$element ) {
@@ -127,13 +205,15 @@
   /**
    * Show
    *
-   * @method Element::show()
-   * @return Element this
+   * @function show
+   * @memberof OSjs.GUI.Element#
+   *
+   * @return {OSjs.GUI.Element} The current instance (this)
    */
   UIElement.prototype.show = function() {
     if ( this.$element && !this.$element.offsetParent ) {
-      if ( OSjs.GUI.Elements[this.tagName] && OSjs.GUI.Elements[this.tagName].show ) {
-        OSjs.GUI.Elements[this.tagName].show.apply(this, arguments);
+      if ( GUI.Elements[this.tagName] && GUI.Elements[this.tagName].show ) {
+        GUI.Elements[this.tagName].show.apply(this, arguments);
       } else {
         if ( this.$element ) {
           this.$element.style.display = this.oldDisplay || '';
@@ -146,8 +226,10 @@
   /**
    * Hide
    *
-   * @method Element::hide()
-   * @return Element this
+   * @function hide
+   * @memberof OSjs.GUI.Element#
+   *
+   * @return {OSjs.GUI.Element} The current instance (this)
    */
   UIElement.prototype.hide = function() {
     if ( this.$element && this.$element.offsetParent ) {
@@ -162,40 +244,89 @@
   /**
    * Register Event
    *
-   * @param   String      evName      Event Name
-   * @param   Function    callback    Callback function
-   * @param   Object      args        (Optional) binding arguments
+   * @function on
+   * @memberof OSjs.GUI.Element#
    *
-   * @method Element::on()
-   * @return Element this
+   * @example
+   * element.on('click', function() {});
+   *
+   * @param   {String}        evName      Event Name
+   * @param   {CallbackEvent} callback    Callback function
+   * @param   {Object}        [args]      Binding arguments
+   *
+   * @return {OSjs.GUI.Element} The current instance (this)
    */
   UIElement.prototype.on = function(evName, callback, args) {
-    if ( OSjs.GUI.Elements[this.tagName] && OSjs.GUI.Elements[this.tagName].bind ) {
-      OSjs.GUI.Elements[this.tagName].bind(this.$element, evName, callback, args);
+    if ( GUI.Elements[this.tagName] && GUI.Elements[this.tagName].bind ) {
+      GUI.Elements[this.tagName].bind(this.$element, evName, callback, args);
     }
     return this;
   };
 
   /**
+   * Register Event with scope
+   *
+   * <pre><code>
+   * This is the same as on() except that you can proxy your callback.
+   * Useful for binding UI events directly to a Window.
+   * </code></pre>
+   *
+   * <b><code>
+   * The callback produced from the event will the same as original, except
+   * **the first parameter is always the GUI element**
+   *
+   * fn(obj, ev, pos, isTouch)
+   * </code></b>
+   *
+   * @example
+   * element.son('click', this, this.onClick);
+   *
+   * @example
+   * MyWindow.prototype.onClick = function(obj, ev, pos, isTouch ) {
+   *  // obj = 'element'
+   * }
+   *
+   * @function son
+   * @memberof OSjs.GUI.Element#
+   * @see OSjs.GUI.Element#on
+   *
+   * @param   {String}        evName      Event Name
+   * @param   {Object}        thisArg     Which object instance to bind to
+   * @param   {CallbackEvent} callback    Callback function
+   * @param   {Object}        [args]      Binding arguments
+   *
+   * @return {OSjs.GUI.Element} The current instance (this)
+   */
+  UIElement.prototype.son = function(evName, thisArg, callback, args) {
+    return this.on(evName, function() {
+      var args = Array.prototype.slice.call(arguments);
+      args.unshift(this);
+      callback.apply(thisArg, args);
+    }, args);
+  };
+
+  /**
    * Sets a parameter/property by name
    *
-   * @param   String    param     Parameter name
-   * @param   Mixed     value     Parameter value
-   * @param   Mixed     arg       (Optional) Extra argument ...
-   * @param   Mixed     arg2      (Optional) Extra argument ...
+   * @function set
+   * @memberof OSjs.GUI.Element#
    *
-   * @method Element::set()
-   * @return Element this
+   * @param   {String}    param     Parameter name
+   * @param   {Mixed}     value     Parameter value
+   * @param   {Mixed}     [arg]     Extra argument ...
+   * @param   {Mixed}     [arg2]    Extra argument ...
+   *
+   * @return {OSjs.GUI.Element} The current instance (this)
    */
   UIElement.prototype.set = function(param, value, arg, arg2) {
     if ( this.$element ) {
-      if ( OSjs.GUI.Elements[this.tagName] && OSjs.GUI.Elements[this.tagName].set ) {
-        if ( OSjs.GUI.Elements[this.tagName].set(this.$element, param, value, arg, arg2) === true ) {
+      if ( GUI.Elements[this.tagName] && GUI.Elements[this.tagName].set ) {
+        if ( GUI.Elements[this.tagName].set(this.$element, param, value, arg, arg2) === true ) {
           return this;
         }
       }
 
-      OSjs.GUI.Helpers.setProperty(this.$element, param, value, arg, arg2);
+      GUI.Helpers.setProperty(this.$element, param, value, arg, arg2);
     }
     return this;
   };
@@ -203,19 +334,21 @@
   /**
    * Get a parameter/property by name
    *
-   * @param   String    param     Parameter name
-   * @param   Mixed     arg       (Optional) Extra argument ...
+   * @function get
+   * @memberof OSjs.GUI.Element#
    *
-   * @method Element::get()
-   * @return Element this
+   * @param   {String}    param     Parameter name
+   * @param   {Mixed}     [arg]     Extra argument ...
+   *
+   * @return {OSjs.GUI.Element} The current instance (this)
    */
   UIElement.prototype.get = function() {
     if ( this.$element ) {
-      if ( OSjs.GUI.Elements[this.tagName] && OSjs.GUI.Elements[this.tagName].get ) {
+      if ( GUI.Elements[this.tagName] && GUI.Elements[this.tagName].get ) {
         var args = ([this.$element]).concat(Array.prototype.slice.call(arguments));
-        return OSjs.GUI.Elements[this.tagName].get.apply(this, args);
+        return GUI.Elements[this.tagName].get.apply(this, args);
       } else {
-        return OSjs.GUI.Helpers.getProperty(this.$element, arguments[0]);
+        return GUI.Helpers.getProperty(this.$element, arguments[0]);
       }
     }
     return null;
@@ -224,19 +357,21 @@
   /**
    * Triggers a custom function by name and arguments
    *
-   * @param   String    name      Name of function
-   * @param   Array     args      (Optional) Argument array (passed to apply())
-   * @param   Mixed     thisArg   (Optional) `this` argument (default=UIElement/this)
+   * @function fn
+   * @memberof OSjs.GUI.Element#
    *
-   * @method Element::fn()
-   * @return Mixed
+   * @param   {String}    name      Name of function
+   * @param   {Array}     [args]    Argument array (passed to apply())
+   * @param   {Mixed}     [thisArg] `this` argument
+   *
+   * @return {Mixed}
    */
   UIElement.prototype.fn = function(name, args, thisArg) {
     args = args || [];
     thisArg = thisArg || this;
 
     if ( this.$element ) {
-      return OSjs.GUI.Elements[this.tagName][name].apply(thisArg, args);
+      return GUI.Elements[this.tagName][name].apply(thisArg, args);
     }
     return null;
   };
@@ -244,10 +379,12 @@
   /**
    * Appends a childNode to this element
    *
-   * @param   Mixed     el        DOMEelement or UIElement
+   * @function append
+   * @memberof OSjs.GUI.Element#
    *
-   * @method Element::append()
-   * @return Element this
+   * @param   {(Node|OSjs.GUI.Element)}     el        Element
+   *
+   * @return {OSjs.GUI.Element} The current instance (this)
    */
   UIElement.prototype.append = function(el) {
     if ( el instanceof UIElement ) {
@@ -268,13 +405,15 @@
   /**
    * Appends (and builds) HTML into the node
    *
-   * @param   String              html        HTML code
-   * @param   OSjs.GUI.Scheme     scheme      (Optional) Reference to the Scheme
-   * @param   OSjs.Core.Window    win         (Optional) Reference to the Window
-   * @param   Object              args        (Optional) List of arguments to send to the parser
+   * @function appendHTML
+   * @memberof OSjs.GUI.Element#
    *
-   * @method Element::appendHTML()
-   * @return Element this
+   * @param   {String}              html        HTML code
+   * @param   {OSjs.GUI.Scheme}     [scheme]    Reference to the Scheme
+   * @param   {OSjs.Core.Window}    [win]       Reference to the Window
+   * @param   {Object}              [args]      List of arguments to send to the parser
+   *
+   * @return {OSjs.GUI.Element} The current instance (this)
    */
   UIElement.prototype.appendHTML = function(html, scheme, win, args) {
     var el = document.createElement('div');
@@ -285,7 +424,7 @@
 
   UIElement.prototype._append = function(el, scheme, win, args) {
     if ( el instanceof Element ) {
-      OSjs.GUI.Scheme.parseNode(scheme, win, el, null, args);
+      GUI.Scheme.parseNode(scheme, win, el, null, args);
     }
 
     // Move elements over
@@ -301,16 +440,18 @@
   /**
    * Perform `querySelector`
    *
-   * @param     String      q     Query
-   * @param     boolean     rui   Return UI Element if possible (default=false)
+   * @function querySelector
+   * @memberof OSjs.GUI.Element#
    *
-   * @return    DOMElement
-   * @method    Element::querySelector()
+   * @param     {String}      q             Query
+   * @param     {Boolean}     [rui=false]   Return UI Element if possible
+   *
+   * @return    {(Node|OSjs.GUI.Element)} Depending on arguments
    */
   UIElement.prototype.querySelector = function(q, rui) {
     var el = this.$element.querySelector(q);
     if ( rui ) {
-      return OSjs.GUI.Scheme.getElementInstance(el, q);
+      return GUI.Scheme.getElementInstance(el, q);
     }
     return el;
   };
@@ -318,35 +459,58 @@
   /**
    * Perform `querySelectorAll`
    *
-   * @param     String      q     Query
-   * @param     boolean     rui   Return UI Element if possible (default=false)
+   * @function querySelectorAll
+   * @memberof OSjs.GUI.Element#
    *
-   * @return    DOMElementCollection
-   * @method    Element::querySelectorAll()
+   * @param     {String}      q             Query
+   * @param     {Boolean}     [rui=false]   Return UI Element if possible
+   *
+   * @return    {OSjs.GUI.Element[]}
    */
   UIElement.prototype.querySelectorAll = function(q, rui) {
     var el = this.$element.querySelectorAll(q);
     if ( rui ) {
       el = el.map(function(i) {
-        return OSjs.GUI.Scheme.getElementInstance(i, q);
+        return GUI.Scheme.getElementInstance(i, q);
       });
     }
     return el;
   };
 
+  /**
+   * Set or get CSS attributes
+   * @function css
+   * @memberof OSjs.GUI.Element#
+   * @see OSjs.Utils.$css
+   */
+  UIElement.prototype.css = function(k, v) {
+    return Utils.$css(this.$element, k, v);
+  };
+
+  /**
+   * Get position
+   * @function position
+   * @memberof OSjs.GUI.Element#
+   * @see OSjs.Utils.$position
+   */
+  UIElement.prototype.position = function() {
+    return Utils.$position(this.$element);
+  };
+
   UIElement.prototype._call = function(method, args) {
-    if ( OSjs.GUI.Elements[this.tagName] && OSjs.GUI.Elements[this.tagName].call ) {
+    if ( GUI.Elements[this.tagName] && GUI.Elements[this.tagName].call ) {
       var cargs = ([this.$element, method, args]);//.concat(args);
-      return OSjs.GUI.Elements[this.tagName].call.apply(this, cargs);
+      return GUI.Elements[this.tagName].call.apply(this, cargs);
     }
     return null;//this;
   };
 
   /**
    * Extended UIElement for ListView, TreeView, IconView, Select, SelectList
-   * @extends UIElement
-   * @api OSjs.GUI.ElementDataView
-   * @class ElementDataView
+   *
+   * @constructor ElementDataView
+   * @memberof OSjs.GUI
+   * @extends OSjs.GUI.Element
    */
   function UIElementDataView() {
     UIElement.apply(this, arguments);
@@ -355,18 +519,42 @@
   UIElementDataView.prototype = Object.create(UIElement.prototype);
   UIElementDataView.constructor = UIElement;
 
+  /**
+   * Clears the view
+   *
+   * @function clear
+   * @memberof OSjs.GUI.ElementDataView#
+   */
   UIElementDataView.prototype.clear = function() {
     return this._call('clear', []);
   };
 
+  /**
+   * Adds one or more elements
+   *
+   * @function add
+   * @memberof OSjs.GUI.ElementDataView#
+   */
   UIElementDataView.prototype.add = function(props) {
     return this._call('add', [props]);
   };
 
+  /**
+   * Do a diffed render
+   *
+   * @function patch
+   * @memberof OSjs.GUI.ElementDataView#
+   */
   UIElementDataView.prototype.patch = function(props) {
     return this._call('patch', [props]);
   };
 
+  /**
+   * Remove element
+   *
+   * @function remove
+   * @memberof OSjs.GUI.ElementDataView#
+   */
   UIElementDataView.prototype.remove = function(id, key) {
     return this._call('remove', [id, key]);
   };
@@ -375,7 +563,7 @@
   // EXPORTS
   /////////////////////////////////////////////////////////////////////////////
 
-  OSjs.GUI.Element = Object.seal(UIElement);
-  OSjs.GUI.ElementDataView = Object.seal(UIElementDataView);
+  GUI.Element = Object.seal(UIElement);
+  GUI.ElementDataView = Object.seal(UIElementDataView);
 
-})(OSjs.API, OSjs.Utils, OSjs.VFS);
+})(OSjs.API, OSjs.Utils, OSjs.VFS, OSjs.GUI);

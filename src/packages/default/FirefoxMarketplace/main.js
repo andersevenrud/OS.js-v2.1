@@ -60,7 +60,10 @@
 
     function showPreview(item) {
       Utils.$empty(preview.$element);
-      if ( !item ) { return; }
+      if ( !item ) {
+        return;
+      }
+
       scheme.render(self, 'FirefoxMarketplacePreview', preview);
       scheme.find(self, 'LabelName').set('value', item.name);
       scheme.find(self, 'LabelAuthor').set('value', item.author);
@@ -112,8 +115,8 @@
     });
 
     view.set('columns', [
-      {label: 'Name', grow: 1, shrink: 1},
-      {label: 'Version', basis: '60px', grow: 0, shrink: 0}
+      {label: 'Name'},
+      {label: 'Version', size: '60px'}
     ]);
 
     scheme.find(this, 'ButtonRefresh').on('click', function() {
@@ -194,7 +197,9 @@
           var preview;
           if ( i.previews ) {
             i.previews.forEach(function(p) {
-              if ( preview ) { return; }
+              if ( preview ) {
+                return;
+              }
 
               if ( p && p.thumbnail_url ) {
                 preview = p.thumbnail_url;

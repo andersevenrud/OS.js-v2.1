@@ -279,7 +279,8 @@
       'Enable Hotkeys' : 'Skru på Hurtigtaster',
       'Enable Icon View' : 'Skru på Ikonvisning',
       'Remove shortcut' : 'Fjern snarvei',
-      'General' : 'Generelt'
+      'General' : 'Generelt',
+      'Search path \'{0}\' is already handled by another entry': 'Søkestien \'{0}\' er allrede håndtert av en annen oppføring'
     },
     pl_PL : {
       'Theme' : 'Temat',
@@ -442,7 +443,26 @@
       'Panels' : 'Khung',
       'Autohide' : 'Tự động ẩn',
       'Information' : 'Thông tin',
-      'Icon View' : 'Biểu tượng'
+      'Icon View' : 'Biểu tượng',
+      'Opacity' : 'Độ trong suốt',
+      'Appearance' : 'Giao diện',
+      'Packages' : 'Phần mềm',
+      'Installed Packages' : 'Các phần mềm đã cài',
+      'App Store' : 'Chợ ứng dụng',
+      'Name' : 'Tên',
+      'Username' : 'Tên người dùng',
+      'Groups' : 'Nhóm',
+      'User' : 'Người dùng',
+      'Version' : 'Phiên bản',
+      'Author' : 'Tác giả',
+      'Hide' : 'Ẩn',
+      'Application' : 'Phần mềm',
+      'Scope' : 'Phạm vi',
+      'Save' : 'Lưu',
+      'Regenerate metadata' : 'Làm mới metadata',
+      'Install from zip' : 'Cài từ file zip',
+      'Refresh' : 'Làm mới',
+      'Install selected' : 'Cài mục đã chọn'
     }
   };
 

@@ -30,7 +30,7 @@
 (function(Application, Window, Utils, API, VFS, GUI) {
   'use strict';
 
-  var categories = ['theme', 'desktop', 'panel', 'user', 'fileview'];
+  var categories = ['theme', 'desktop', 'panel', 'user', 'fileview', 'search'];
 
   /////////////////////////////////////////////////////////////////////////////
   // WINDOWS
@@ -163,7 +163,7 @@
     }
 
     var found;
-    var indexes = ['TabsTheme', 'TabsDesktop', 'TabsPanel', 'TabsUser', 'TabsFileView'];
+    var indexes = ['TabsTheme', 'TabsDesktop', 'TabsPanel', 'TabsUser', 'TabsFileView', 'TabsSearch'];
     if ( typeof idx === 'string' ) {
       idx = Math.max(0, categories.indexOf(idx));
     }
@@ -203,6 +203,7 @@
     this.initPanelTab(wm, scheme, init);
     this.initUserTab(wm, scheme, init);
     this.initFileViewTab(wm, scheme, init);
+    this.initSearchTab(wm, scheme, init);
   };
 
   /**
@@ -457,13 +458,16 @@
       var list = [];
       self.panelItems.forEach(function(i, idx) {
         var name = i.name;
-        list.push({
-          value: idx,
-          columns: [{
-            icon: API.getIcon(items[name].Icon),
-            label: Utils.format('{0} ({1})', items[name].Name, items[name].Description)
-          }]
-        });
+
+        if ( items[name] ) {
+          list.push({
+            value: idx,
+            columns: [{
+              icon: API.getIcon(items[name].Icon),
+              label: Utils.format('{0} ({1})', items[name].Name, items[name].Description)
+            }]
+          });
+        }
       });
       max = self.panelItems.length - 1;
 
@@ -583,9 +587,78 @@
   };
 
   /**
+   * Search
+   */
+  ApplicationSettingsWindow.prototype.initSearchTab = function(wm, scheme, init) {
+    var self = this;
+    var sm = OSjs.Core.getSettingsManager();
+    var searchOptions = Utils.cloneObject(sm.get('SearchEngine') || {});
+
+    scheme.find(this, 'SearchEnableApplications').set('value', searchOptions.applications === true);
+    scheme.find(this, 'SearchEnableFiles').set('value', searchOptions.files === true);
+
+    var view = scheme.find(this, 'SearchPaths').clear();
+    view.set('columns', [
+      {label: 'Path'}
+    ]);
+
+    var list = (searchOptions.paths || []).map(function(l) {
+      return {
+        value: l,
+        id: l,
+        columns: [
+          {label: l}
+        ]
+      };
+    });
+
+    view.add(list);
+
+    if ( !init ) {
+      return;
+    }
+
+    function openAddDialog() {
+      self._toggleDisabled(true);
+
+      API.createDialog('File', {
+        select: 'dir',
+        mfilter: [
+          function(m) {
+            return m.module.searchable === true;
+          }
+        ]
+      }, function(ev, button, result) {
+        self._toggleDisabled(false);
+        if ( button === 'ok' && result ) {
+          view.add([{
+            value: result.path,
+            id: result.path,
+            columns: [
+              {label: result.path}
+            ]
+          }]);
+        }
+      }, self);
+    }
+
+    function removeSelected() {
+      var current = view.get('value') || [];
+      current.forEach(function(c) {
+        view.remove(c.index);
+      });
+    }
+
+    scheme.find(this, 'SearchAdd').on('click', openAddDialog);
+    scheme.find(this, 'SearchRemove').on('click', removeSelected);
+  };
+
+  /**
    * Apply
    */
   ApplicationSettingsWindow.prototype.applySettings = function(wm, scheme) {
+    var _ = OSjs.Applications.ApplicationSettings._;
+
     // Theme
     this.settings.theme = scheme.find(this, 'StyleThemeName').get('value');
     this.settings.sounds = scheme.find(this, 'SoundThemeName').get('value');
@@ -619,17 +692,53 @@
     // User
     this.settings.language = scheme.find(this, 'UserLocale').get('value');
 
-    var showHiddenFiles = scheme.find(this, 'ShowHiddenFiles').get('value');
-    var showFileExtensions = scheme.find(this, 'ShowFileExtensions').get('value');
+    // Other
+    var sm = OSjs.Core.getSettingsManager();
+    var vfsSettings = {
+      scandir: {
+        showHiddenFiles: scheme.find(this, 'ShowHiddenFiles').get('value'),
+        showFileExtensions: scheme.find(this, 'ShowFileExtensions').get('value')
+      }
+    };
+
+    var tmpPaths = scheme.find(this, 'SearchPaths').get('entry', null, null, true).sort();
+    var paths = [];
+
+    function isChildOf(tp) {
+      var result = false;
+      paths.forEach(function(p) {
+        if ( !result ) {
+          result = tp.substr(0, p.length) === p;
+        }
+      });
+      return result;
+    }
+
+    tmpPaths.forEach(function(tp) {
+      var c = isChildOf(tp);
+      if ( c ) {
+        wm.notification({
+          title: API._('LBL_SEARCH'),
+          message: _('Search path \'{0}\' is already handled by another entry', tp)
+        });
+      }
+
+      if ( !paths.length || !c ) {
+        paths.push(tp);
+      }
+
+    });
+
+    var searchSettings = {
+      applications: scheme.find(this, 'SearchEnableApplications').get('value'),
+      files: scheme.find(this, 'SearchEnableFiles').get('value'),
+      paths: paths
+    };
 
     wm.applySettings(this.settings, false, function() {
-      OSjs.Core.getSettingsManager().instance('VFS').set(null, {
-        scandir: {
-          showHiddenFiles: showHiddenFiles,
-          showFileExtensions: showFileExtensions
-        }
-      }, true);
-    });
+      sm.instance('VFS').set(null, vfsSettings, false, false);
+      sm.instance('SearchEngine').set(null, searchSettings, true, false);
+    }, false);
   };
 
   /////////////////////////////////////////////////////////////////////////////
@@ -654,8 +763,16 @@
     var url = API.getApplicationResource(this, './scheme.html');
     var scheme = GUI.createScheme(url);
     var category = this._getArgument('category') || settings.category;
+
     scheme.load(function(error, result) {
-      self._addWindow(new ApplicationSettingsWindow(self, metadata, scheme, category));
+      var win = self._addWindow(new ApplicationSettingsWindow(self, metadata, scheme, category));
+
+      self._on('attention', function(args) {
+        if ( win && args.category ) {
+          win.setContainer(args.category, true);
+          win._focus();
+        }
+      });
     });
 
     this._setScheme(scheme);
@@ -664,18 +781,6 @@
   ApplicationSettings.prototype.panelItemsDialog = function(callback) {
     if ( this.__scheme ) {
       this._addWindow(new PanelItemDialog(this, this.__metadata, this.__scheme, callback));
-    }
-  };
-
-  ApplicationSettings.prototype._onMessage = function(obj, msg, args) {
-    Application.prototype._onMessage.apply(this, arguments);
-
-    if ( this.__mainwindow ) {
-      var win = this._getWindow(null);
-      if ( msg === 'attention' && args.category ) {
-        win.setContainer(args.category, true);
-        win._focus();
-      }
     }
   };
 

@@ -30,9 +30,6 @@
 (function() {
   'use strict';
 
-  window.OSjs = window.OSjs || {};
-  OSjs.Utils  = OSjs.Utils  || {};
-
   /////////////////////////////////////////////////////////////////////////////
   // STRING
   /////////////////////////////////////////////////////////////////////////////
@@ -40,13 +37,14 @@
   /**
    * Format a string (almost like sprintf)
    *
-   * @param   String      format        String format
-   * @param   String      ...           Insert into format
+   * @function format
+   * @memberof OSjs.Utils
+   * @link http://stackoverflow.com/a/4673436
    *
-   * @return  String                    The formatted string
+   * @param   {String}      format        String format
+   * @param   {...String}   s             Insert into format
    *
-   * @link    http://stackoverflow.com/a/4673436
-   * @api     OSjs.Utils.format()
+   * @return  {String}                    The formatted string
    */
   OSjs.Utils.format = function(format) {
     var args = Array.prototype.slice.call(arguments, 1);
@@ -62,11 +60,12 @@
   /**
    * Remove whitespaces and newlines from HTML document
    *
-   * @param   String    html          HTML string input
+   * @function cleanHTML
+   * @memberof OSjs.Utils
    *
-   * @return  String
+   * @param   {String}    html          HTML string input
    *
-   * @api     OSjs.Utils.cleanHTML()
+   * @return  {String}
    */
   OSjs.Utils.cleanHTML = function(html) {
     return html.replace(/\n/g, '')
@@ -78,12 +77,13 @@
   /**
    * Parses url into a dictionary (supports modification)
    *
-   * @param     String        url       Input URL
-   * @param     Object        modify    (Optional) Modify URL with these options
+   * @function parseurl
+   * @memberof OSjs.Utils
    *
-   * @return    Object                  Object with {protocol, host, path}
+   * @param     {String}        url       Input URL
+   * @param     {Object}        [modify]  Modify URL with these options
    *
-   * @api       OSjs.Utils.parseurl()
+   * @return    {Object}                  Object with protocol, host, path
    */
   OSjs.Utils.parseurl = function(url, modify) {
     modify = modify || {};
@@ -125,6 +125,20 @@
     };
   };
 
+  /**
+   * Returns the URL without protocol
+   *
+   * @function getRelativeURL
+   * @memberof OSjs.Utils
+   *
+   * @param   {String}    orig        Path name
+   *
+   * @return  {String}
+   */
+  OSjs.Utils.getRelativeURL = function getRelativeURL(orig) {
+    return orig.replace(/^([A-z0-9\-_]+)\:\/\//, '');
+  };
+
   /////////////////////////////////////////////////////////////////////////////
   // OBJECT HELPERS
   /////////////////////////////////////////////////////////////////////////////
@@ -132,12 +146,13 @@
   /**
    * Wrapper for merging function argument dictionaries
    *
-   * @api    OSjs.Utils.argumentDefaults()
+   * @function argumentDefaults
+   * @memberof OSjs.Utils
    *
-   * @param  Object   args      Given function Dictionary
-   * @param  Object   defaults  Defaults Dictionary
-   * @param  boolean  undef     Check with 'undefined'
-   * @return Object
+   * @param  {Object}   args      Given function Dictionary
+   * @param  {Object}   defaults  Defaults Dictionary
+   * @param  {Boolean}  undef     Check with 'undefined'
+   * @return {Object}
    */
   OSjs.Utils.argumentDefaults = function(args, defaults, undef) {
     args = args || {};
@@ -156,12 +171,13 @@
   /**
    * Deep-merge to objects
    *
-   * @param   Object      obj1      Object to merge to
-   * @param   Object      obj2      Object to merge with
+   * @function mergeObject
+   * @memberof OSjs.Utils
    *
-   * @return  Object                The merged object
+   * @param   {Object}      obj1      Object to merge to
+   * @param   {Object}      obj2      Object to merge with
    *
-   * @api     OSjs.Utils.mergeObject()
+   * @return  {Object}                The merged object
    */
   OSjs.Utils.mergeObject = function(obj1, obj2, opts) {
     opts = opts || {};
@@ -189,11 +205,12 @@
   /**
    * Clone a object
    *
-   * @param   Object      o     The object to clone
+   * @function cloneObject
+   * @memberof OSjs.Utils
    *
-   * @return  Object            An identical object
+   * @param   {Object}      o     The object to clone
    *
-   * @api     OSjs.Utils.cloneObject()
+   * @return  {Object}            An identical object
    */
   OSjs.Utils.cloneObject = function(o) {
     return JSON.parse(JSON.stringify(o, function(key, value) {
@@ -207,11 +224,12 @@
   /**
    * Fixes JSON for HTTP requests (in case they were returned as string)
    *
-   * @param   Mixed     response      The data
+   * @function fixJSON
+   * @memberof OSjs.Utils
    *
-   * @return  Object                  JSON
+   * @param   {Mixed}     response      The data
    *
-   * @api     OSjs.Utils.fixJSON()
+   * @return  {Object}                  JSON
    */
   OSjs.Utils.fixJSON = function(response) {
     if ( typeof response === 'string' ) {
@@ -226,6 +244,67 @@
     return response;
   };
 
+  /**
+   * Extends the given object
+   *
+   * <pre>
+   * If you give a `parentObj` and a prototype method exists
+   * in that target, the child object method will be wrapped
+   * to make sure the super object method is called.
+   * </pre>
+   *
+   * @example
+   * Utils.extend({
+   *  a: 'foo'
+   * }, {
+   *  b: 'bar'
+   * }); // -> {a: 'foo', b: 'bar'}
+   *
+   * @function extend
+   * @memberof OSjs.Utils
+   *
+   * @param {Object}    obj          The destination
+   * @param {Object}    methods      The source
+   */
+  OSjs.Utils.extend = function(obj, methods) {
+    if ( obj && methods ) {
+      Object.keys(methods).forEach(function(k) {
+        obj[k] = methods[k];
+      });
+    }
+  };
+
+  /**
+   * Extends the given object by prototype chain
+   *
+   * @example
+   * var MyApp = Utils.inherit(OSjs.Core.Application, function(name, args, metadata) {
+   *  Application.apply(this, arguments);
+   * }, {
+   *  init: function() {
+   *    // then do your stuff here
+   *  }
+   * });
+   *
+   * @function inherit
+   * @memberof OSjs.Utils
+   * @see OSjs.Utils.extend
+   *
+   * @param {Object}    to        The class to inherit
+   * @param {Object}    from      The child class
+   * @param {Object}    [extend]  Extend the class with these methods
+   */
+  OSjs.Utils.inherit = function(to, from, extend) {
+    from.prototype = Object.create(to.prototype);
+    from.constructor = to;
+
+    if ( extend ) {
+      OSjs.Utils.extend(from.prototype, extend);
+    }
+
+    return from;
+  };
+
   /////////////////////////////////////////////////////////////////////////////
   // COLORS
   /////////////////////////////////////////////////////////////////////////////
@@ -233,11 +312,12 @@
   /**
    * Convert HEX to RGB
    *
-   * @param   String      hex     The hex string (with #)
+   * @function convertToRGB
+   * @memberof OSjs.Utils
    *
-   * @return  Object              RGB in form of {r:0, g:0, b:0}
+   * @param   {String}      hex     The hex string (with #)
    *
-   * @api     OSjs.Utils.convertToRGB()
+   * @return  {Object}              RGB in form of r, g, b
    */
   OSjs.Utils.convertToRGB = function(hex) {
     var rgb = parseInt(hex.replace('#', ''), 16);
@@ -251,17 +331,15 @@
   /**
    * Convert RGB to HEX
    *
-   * @param   Object      rgb       The RGB object in form of {r:0, g:0, b:0}
+   * @function convertToHEX
+   * @memberof OSjs.Utils
    *
-   * OR
+   * @param   Object      rgb       (ALTERNATIVE 1) The RGB object in form of r, g, b
+   * @param   {Number}    r         (ALTERNATIVE 2) Red value
+   * @param   {Number}    g         (ALTERNATIVE 2) Green value
+   * @param   {Number}    b         (ALTERNATIVE 2) Blue value
    *
-   * @param   int         r         Red value
-   * @param   int         g         Green value
-   * @param   int         b         Blue value
-   *
-   * @return  String                Hex string (with #)
-   *
-   * @api     OSjs.Utils.convertToHEX()
+   * @return  {String}                Hex string (with #)
    */
   OSjs.Utils.convertToHEX = function(r, g, b) {
     if ( typeof r === 'object' ) {
@@ -292,12 +370,14 @@
   /**
    * Ivert HEX color
    *
-   * @param   String      hex     Hex string (With #)
+   * @function invertHEX
+   * @memberof OSjs.Utils
+   * @link http://stackoverflow.com/a/9601429/1236086
    *
-   * @return  String              Inverted hex (With #)
+   * @param   {String}      hex     Hex string (With #)
    *
-   * @link    http://stackoverflow.com/a/9601429/1236086
-   * @api     OSjs.Utils.invertHEX()
+   * @return  {String}              Inverted hex (With #)
+   *
    */
   OSjs.Utils.invertHEX = function(hex) {
     var color = parseInt(hex.replace('#', ''), 16);
@@ -314,17 +394,20 @@
   /**
    * Run an async queue in series
    *
-   * @param   Array       queue     The queue
-   * @param   Function    onentry   Callback on step => fn(entry, index, fnNext)
-   * @param   Function    ondone    Callback on done => fn()
+   * @function asyncs
+   * @memberof OSjs.Utils
    *
-   * @return  void
-   *
-   * @api     OSjs.Utils.asyncs()
+   * @param   {Array}       queue     The queue
+   * @param   {Function}    onentry   Callback on step => fn(entry, index, fnNext)
+   * @param   {Function}    ondone    Callback on done => fn()
    */
   OSjs.Utils.asyncs = function(queue, onentry, ondone) {
-    onentry = onentry || function(e, i, n) { n(); };
-    ondone  = ondone  || function() {};
+    onentry = onentry || function(e, i, n) {
+      n();
+    };
+
+    ondone  = ondone  || function() {
+    };
 
     function next(i) {
       if ( i >= queue.length ) {

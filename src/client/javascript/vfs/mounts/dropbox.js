@@ -30,14 +30,15 @@
 (function(Utils, API) {
   'use strict';
 
+  /**
+   * @namespace Dropbox
+   * @memberof OSjs.VFS.Modules
+   */
+
   // https://github.com/bcherry/dropbox-js
   // https://github.com/apily/dropbox/blob/master/index.js
   // https://www.dropbox.com/developers/core/start/python
   // https://www.dropbox.com/developers/reference/devguide
-
-  window.OSjs       = window.OSjs       || {};
-  OSjs.VFS          = OSjs.VFS          || {};
-  OSjs.VFS.Modules  = OSjs.VFS.Modules  || {};
 
   var _cachedClient;
   var _isMounted = false;
@@ -113,7 +114,8 @@
   DropboxVFS.prototype.scandir = function(item, callback) {
     console.info('DropboxVFS::scandir()', item);
 
-    var path = OSjs.VFS.getRelativeURL(item.path);
+    var mm = OSjs.Core.getMountManager();
+    var path = Utils.getRelativeURL(item.path);
     var isOnRoot = path === '/';
 
     function _finish(entries) {
@@ -131,7 +133,7 @@
         console.info(iter);
         result.push(new OSjs.VFS.File({
           filename: iter.name,
-          path: OSjs.VFS.Modules.Dropbox.root.replace(/\/$/, '') + iter.path,
+          path: mm.getModuleProperty('Dropbox', 'root').replace(/\/$/, '') + iter.path,
           size: iter.size,
           mime: iter.isFolder ? null : iter.mimeType,
           type: iter.isFolder ? 'dir' : 'file'
@@ -139,7 +141,7 @@
       });
       console.info('DropboxVFS::scandir()', item, '=>', result);
 
-      var list = OSjs.VFS.filterScandir(result, item._opts);
+      var list = OSjs.VFS.Helpers.filterScandir(result, item._opts);
       callback(false, list);
     }
 
@@ -155,7 +157,7 @@
   DropboxVFS.prototype.write = function(item, data, callback) {
     console.info('DropboxVFS::write()', item);
 
-    var path = OSjs.VFS.getRelativeURL(item.path);
+    var path = Utils.getRelativeURL(item.path);
     this.client.writeFile(path, data, function(error, stat) {
       callback(error, true);
     });
@@ -166,7 +168,7 @@
     options.arrayBuffer = true;
 
     console.info('DropboxVFS::read()', item, options);
-    var path = OSjs.VFS.getRelativeURL(item.path);
+    var path = Utils.getRelativeURL(item.path);
 
     this.client.readFile(path, options, function(error, entries) {
       callback(error, (error ? false : (entries instanceof Array ? entries.join('\n') : entries)));
@@ -175,8 +177,8 @@
 
   DropboxVFS.prototype.copy = function(src, dest, callback) {
     console.info('DropboxVFS::copy()', src, dest);
-    var spath = OSjs.VFS.getRelativeURL(src.path);
-    var dpath = OSjs.VFS.getRelativeURL(dest.path);
+    var spath = Utils.getRelativeURL(src.path);
+    var dpath = Utils.getRelativeURL(dest.path);
     this.client.copy(spath, dpath, function(error) {
       callback(error, !error);
     });
@@ -184,8 +186,8 @@
 
   DropboxVFS.prototype.move = function(src, dest, callback) {
     console.info('DropboxVFS::move()', src, dest);
-    var spath = OSjs.VFS.getRelativeURL(src.path);
-    var dpath = OSjs.VFS.getRelativeURL(dest.path);
+    var spath = Utils.getRelativeURL(src.path);
+    var dpath = Utils.getRelativeURL(dest.path);
     this.client.move(spath, dpath, function(error) {
       callback(error, !error);
     });
@@ -193,7 +195,7 @@
 
   DropboxVFS.prototype.unlink = function(item, callback) {
     console.info('DropboxVFS::unlink()', item);
-    var path = OSjs.VFS.getRelativeURL(item.path);
+    var path = Utils.getRelativeURL(item.path);
     this.client.unlink(path, function(error, stat) {
       callback(error, !error);
     });
@@ -201,7 +203,7 @@
 
   DropboxVFS.prototype.mkdir = function(item, callback) {
     console.info('DropboxVFS::mkdir()', item);
-    var path = OSjs.VFS.getRelativeURL(item.path);
+    var path = Utils.getRelativeURL(item.path);
     this.client.mkdir(path, function(error, stat) {
       callback(error, !error);
     });
@@ -218,7 +220,7 @@
   DropboxVFS.prototype.fileinfo = function(item, callback) {
     console.info('DropboxVFS::fileinfo()', item);
 
-    var path = OSjs.VFS.getRelativeURL(item.path);
+    var path = Utils.getRelativeURL(item.path);
     this.client.stat(path, path, function(error, response) {
       var fileinfo = null;
       if ( !error && response ) {
@@ -236,14 +238,16 @@
 
   DropboxVFS.prototype.url = function(item, callback) {
     console.info('DropboxVFS::url()', item);
-    var path = (typeof item === 'string') ? OSjs.VFS.getRelativeURL(item) : OSjs.VFS.getRelativeURL(item.path);
+    var path = (typeof item === 'string') ? Utils.getRelativeURL(item) : Utils.getRelativeURL(item.path);
     this.client.makeUrl(path, {downloadHack: true}, function(error, url) {
       callback(error, url ? url.url : false);
     });
   };
 
   DropboxVFS.prototype.upload = function(file, dest, callback) {
-    var ndest = dest.replace(OSjs.VFS.Modules.Dropbox.match, '');
+    var mm = OSjs.Core.getMountManager();
+    var ndest = Utils.getRelativeURL(dest);
+
     if ( !ndest.match(/\/$/) ) {
       ndest += '/';
     }
@@ -272,6 +276,10 @@
     callback(API._('ERR_VFS_UNAVAILABLE'));
   };
 
+  DropboxVFS.freeSpace = function(root, callback) {
+    callback(false, -1);
+  };
+
   /////////////////////////////////////////////////////////////////////////////
   // WRAPPERS
   /////////////////////////////////////////////////////////////////////////////
@@ -290,7 +298,7 @@
 
         createRingNotification();
 
-        API.message('vfs', {type: 'mount', module: 'Dropbox', source: null});
+        API.message('vfs:mount', 'Dropbox', {source: null});
 
         callback(_cachedClient);
       });
@@ -310,7 +318,7 @@
       _isMounted = false;
       _cachedClient = null;
 
-      API.message('vfs', {type: 'unmount', module: 'Dropbox', source: null});
+      API.message('vfs:unmount', 'Dropbox', {source: null});
 
       destroyRingNotification();
 
@@ -354,18 +362,19 @@
 
   /**
    * This is the Dropbox VFS Abstraction for OS.js
-   *
-   * @api OSjs.VFS.Modules.Dropbox
    */
-  OSjs.VFS.Modules.Dropbox = OSjs.VFS.Modules.Dropbox || OSjs.VFS._createMountpoint({
+  OSjs.Core.getMountManager()._add({
     readOnly: false,
+    name: 'Dropbox',
+    transport: 'Dropbox',
     description: 'Dropbox',
     visible: true,
+    searchable: false,
     unmount: function(cb) {
       // FIXME: Should we sign out here too ?
       cb = cb || function() {};
       _isMounted = false;
-      API.message('vfs', {type: 'unmount', module: 'Dropbox', source: null});
+      API.message('vfs:unmount', 'Dropbox', {source: null});
       cb(false, true);
     },
     mounted: function() {
