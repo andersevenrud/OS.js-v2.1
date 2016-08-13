@@ -275,6 +275,8 @@
     }
 
     this.callAPI('opkg', {command: name, args: args}, function(err, stdout) {
+      stdout = String(stdout) || '';
+
       if ( dialog ) {
         try {
           dialog.setProgress(100);
@@ -292,7 +294,7 @@
 
       dialog = null;
 
-      cb(err, (stdout || '').split('\n'));
+      cb(err, stdout.split('\n'));
     });
   };
 
