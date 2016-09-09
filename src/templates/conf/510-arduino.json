@@ -37,7 +37,41 @@
               "icon": "arduino.png",
               "title": "Arduino"
             }
-          }
+          },
+          "panels": [
+            {
+              "options": {
+                "position": "top",
+                "ontop": true,
+                "autohide": false,
+                "background": "#101010",
+                "foreground": "#ffffff",
+                "opacity": 85
+              },
+              "items": [
+                {
+                  "name": "AppMenu",
+                  "settings": {}
+                },
+                {
+                  "name": "Buttons",
+                  "settings": {}
+                },
+                {
+                  "name": "WindowList",
+                  "settings": {}
+                },
+                {
+                  "name": "NotificationArea",
+                  "settings": {}
+                },
+                {
+                  "name": "Clock",
+                  "settings": {}
+                }
+              ]
+            }
+          ]
         }
       }
     },
