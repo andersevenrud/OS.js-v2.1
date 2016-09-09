@@ -21,6 +21,24 @@
     "SettingsManager": {
       "Wizard": {
         "completed": false
+      },
+      "SettingsManager": {
+        "CoreWM": {
+          "icon"            : "arduino.png",
+          "wallpaper"       : "osjs:///themes/wallpapers/arduino-logo.jpg",
+          "backgroundColor" : "#ebebeb",
+          "theme"           : "material",
+          "icons"           : "default",
+          "sounds"          : "default",
+          "background"      : "image-center",
+          "enableSounds"    : false,
+          "menu": {
+            "arduino": {
+              "icon": "arduino.png",
+              "title": "Arduino"
+            }
+          }
+        }
       }
     },
 
@@ -42,29 +60,11 @@
         "shared": {
           "enabled": false
         },
+        "desktop": {
+          "visible": false
+        },
         "root": {
           "description": "Arduino Storage"
-        }
-      }
-    },
-
-    "WM" : {
-      "args": {
-        "defaults": {
-          "icon"            : "arduino.png",
-          "wallpaper"       : "osjs:///themes/wallpapers/arduino-logo.jpg",
-          "backgroundColor" : "#ebebeb",
-          "theme"           : "material",
-          "icons"           : "default",
-          "sounds"          : "default",
-          "background"      : "image-center",
-          "enableSounds"    : false,
-          "menu": {
-            "arduino": {
-              "icon": "arduino.png",
-              "title": "Arduino"
-            }
-          }
         }
       }
     }
