@@ -19,7 +19,8 @@
     "src/client/javascript/locales/vi_VN.js",
     "src/client/javascript/locales/tr_TR.js",
     "src/client/javascript/locales/it_IT.js",
-    "src/client/javascript/locales/fa_FA.js"
+    "src/client/javascript/locales/fa_FA.js",
+    "src/client/javascript/locales/ar_DZ.js"
   ],
   "statics": {
     "src/client/dialogs.html": "dist/dialogs.html"
@@ -93,8 +94,7 @@
     "src/client/javascript/helpers/google-api.js",
     "src/client/javascript/helpers/windows-live-api.js",
     "src/client/javascript/helpers/zip-archiver.js",
-    "src/client/javascript/helpers/settings-fragment.js",
-    "src/client/javascript/helpers/firefox-marketplace.js"
+    "src/client/javascript/helpers/settings-fragment.js"
   ],
 
   "stylesheets": [

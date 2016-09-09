@@ -1,7 +1,10 @@
 {
   "client" : {
     "Locale": "en_EN",
-    "LocaleDetect": true,
+    "LocaleOptions" : {
+      "AutoDetect": true,
+      "RTL": ["az", "fa", "he", "uz", "zh","ar"]
+    },
     "Languages": {
       "en_EN": "English",
       "bg_BG": "Bulgarian (Bulgaria)",
@@ -17,9 +20,10 @@
       "pt_BR": "Portuguese (Brazil)",
       "sk_SK": "Slovak (Slovenčina)",
       "vi_VN": "Vietnamese (Tiếng Việt)",
-      "tr_TR": "Turkish(Turkey)",
-      "it_IT": "Italiano(Italian)",
-      "fa_FA": "Farsi(Persian)"
+      "tr_TR": "Turkish (Turkey)",
+      "it_IT": "Italiano (Italian)",
+      "fa_FA": "Farsi (Persian)",
+      "ar_DZ": "Arabic (Algeria)"
     }
   }
 }

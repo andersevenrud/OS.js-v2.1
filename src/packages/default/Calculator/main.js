@@ -116,7 +116,7 @@
           self.operation(keys[keyCode]);
         }
       }
-    }).focus();
+    }).set('readonly', true).focus();
 
     root.querySelectorAll('gui-button').forEach(function(el, idx) {
       var r = parseInt(idx / 4, 10);
@@ -169,8 +169,8 @@
     var output = (function() {
       // Kudos http://codepen.io/GeoffStorbeck/pen/zxgaqw
 
-      if ( !isNaN(val) || val === '.' ) { // Number
-        self.temp += val;
+      if ( !isNaN(val) || val === 'dec' ) { // Number
+        self.temp += val === 'dec' ? ops[val] : val;
 
         return self.temp.substring(0,10);
       } else if ( val === 'AC' ) { // Clear

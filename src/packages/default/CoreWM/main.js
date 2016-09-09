@@ -30,8 +30,22 @@
 (function(WindowManager, GUI, Utils, API, VFS) {
   'use strict';
 
-  var SETTING_STORAGE_NAME = 'CoreWM';
   var PADDING_PANEL_AUTOHIDE = 10; // FIXME: Replace with a constant ?!
+
+  function defaultSettings(defaults) {
+    var compability = Utils.getCompability();
+
+    var cfg = {
+      animations: compability.css.animation,
+      useTouchMenu: compability.touch
+    };
+
+    if ( defaults ) {
+      cfg = Utils.mergeObject(cfg, defaults);
+    }
+
+    return cfg;
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // APPLICATION
@@ -41,11 +55,9 @@
    * Application
    */
   var CoreWM = function(args, metadata) {
-    var ds = OSjs.Applications.CoreWM.DefaultSettings;
-
     var importSettings = args.defaults || {};
 
-    WindowManager.apply(this, ['CoreWM', this, args, metadata, ds(importSettings)]);
+    WindowManager.apply(this, ['CoreWM', this, args, metadata, defaultSettings(importSettings)]);
 
     this.scheme           = null;
     this.panels           = [];
@@ -201,6 +213,33 @@
 
     this.applySettings(this._settings.get());
 
+    this._on('vfs', function(msg, obj) {
+      if ( !obj || msg.match(/^vfs:(un)?mount/) ) {
+        return;
+      }
+
+      var wasTouched = false;
+      var desktopPath = self.getSetting('desktopPath');
+
+      function _check(f) {
+        var t = Utils.dirname(f.path);
+        return f.path.substr(0, desktopPath.length) === desktopPath;
+      }
+
+      if ( obj.destination ) {
+        wasTouched = _check(obj.destination);
+        if ( !wasTouched ) {
+          wasTouched = _check(obj.source);
+        }
+      } else {
+        wasTouched = _check(obj);
+      }
+
+      if ( wasTouched && self.iconView ) {
+        self.iconView._refresh();
+      }
+    });
+
     initScheme(function() {
       self.initSwitcher();
       self.initDesktop();
@@ -240,7 +279,7 @@
       settings.background = 'color';
     } catch ( e ) {}
 
-    this.applySettings(OSjs.Applications.CoreWM.DefaultSettings(settings), true);
+    this.applySettings(defaultSettings(settings), true);
 
     // Clear DOM
     this._$notifications = Utils.$remove(this._$notifications);
@@ -409,17 +448,16 @@
   CoreWM.prototype.initIconView = function() {
     var self = this;
 
-    if ( this.iconView ) {
+    if ( !this.getSetting('enableIconView') && this.iconView ) {
       this.iconView.destroy();
       this.iconView = null;
-    }
-
-    if ( !this.getSetting('enableIconView') ) {
       return;
     }
 
-    this.iconView = new OSjs.Applications.CoreWM.DesktopIconView(this);
-    document.body.appendChild(this.iconView.getRoot());
+    if ( !this.iconView ) {
+      this.iconView = new OSjs.Applications.CoreWM.DesktopIconView(this);
+      document.body.appendChild(this.iconView.getRoot());
+    }
 
     setTimeout(function() {
       if ( self.iconView ) {
@@ -573,12 +611,10 @@
     var self = this;
 
     VFS.upload({
-      destination: API.getDefaultPath(),
+      destination: 'desktop:///',
       files: files
     }, function(error, file) {
-      if ( !error && file && self.iconView ) {
-        self.iconView.addShortcut(file, self, true);
-      }
+      // Do nothing as the message API will catch this
     });
   };
 
@@ -1122,15 +1158,13 @@
   CoreWM.prototype.getSetting = function(k) {
     var val = WindowManager.prototype.getSetting.apply(this, arguments);
     if ( typeof val === 'undefined' || val === null ) {
-      var ds = OSjs.Applications.CoreWM.DefaultSettings;
-      return ds(this.importedSettings)[k];
+      return defaultSettings(this.importedSettings)[k];
     }
     return val;
   };
 
   CoreWM.prototype.getDefaultSetting = function(k) {
-    var ds = OSjs.Applications.CoreWM.DefaultSettings;
-    var settings = ds(this.importedSettings);
+    var settings = defaultSettings(this.importedSettings);
     if ( typeof k !== 'undefined' ) {
       return settings[k];
     }

@@ -429,7 +429,7 @@
     var buttonOptions = scheme.find(this, 'PanelButtonOptions');
 
     var max = 0;
-    var items = OSjs.Applications.CoreWM.PanelItems;
+    var items = OSjs.Core.getPackageManager().getPackage('CoreWM').panelItems;
 
     this.panelItems = panel.items || [];
 
@@ -491,7 +491,7 @@
     }
 
     view.on('select', function(ev) {
-      if ( ev && ev.detail && ev.detail.entries ) {
+      if ( ev && ev.detail && ev.detail.entries && ev.detail.entries.length ) {
         checkSelection(ev.detail.entries[0].index);
       }
     });

@@ -236,6 +236,8 @@
    * @param  {String}   s     Locale name
    */
   API.setLocale = function _apiSetLocale(l) {
+    var RTL = API.getConfig('LocaleOptions.RTL', []);
+
     if ( OSjs.Locales[l] ) {
       CurrentLocale = l;
     } else {
@@ -243,9 +245,11 @@
       CurrentLocale = DefaultLocale;
     }
 
+    var major = CurrentLocale.split('_')[0];
     var html = document.querySelector('html');
     if ( html ) {
       html.setAttribute('lang', l);
+      html.setAttribute('dir', RTL.indexOf(major) !== -1 ? 'rtl' : 'ltr');
     }
 
     console.info('API::setLocale()', CurrentLocale);
@@ -429,7 +433,7 @@
     console.group('API::open()', file);
 
     if ( file.mime === 'osjs/application' ) {
-      _launchApp(Utils.filename(file.path), {});
+      _launchApp(Utils.filename(file.path), launchArgs);
     } else if ( file.type === 'dir' ) {
       var fm = settingsManager.instance('DefaultApplication').get('dir', 'ApplicationFileManager');
       _launchApp(fm, {path: file.path});
@@ -482,6 +486,8 @@
         OSjs.API.launch(n, args);
       }, 500);
     }
+
+    OSjs.GUI.Scheme.clearCache(); // TODO Only for requested application
 
     OSjs.API.getProcess(n).forEach(relaunch);
   };
