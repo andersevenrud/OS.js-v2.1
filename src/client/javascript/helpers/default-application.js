@@ -72,24 +72,16 @@
 
   /**
    * Initialize
+   *
+   * @TODO DEPRECATED This is kept for backward compability
    */
   DefaultApplication.prototype.init = function(settings, metadata, onLoaded) {
     Application.prototype.init.call(this, settings, metadata);
 
-    var self = this;
-    var url = API.getApplicationResource(this, './scheme.html');
     var file = this._getArgument('file');
-
-    var scheme = GUI.createScheme(url);
-    scheme.load(function(error, result) {
-      if ( error ) {
-        console.error('DefaultApplication::init()', 'Scheme::load()', error, self);
-      } else {
-        onLoaded(scheme, file);
-      }
+    this._loadScheme('./scheme.html', function(scheme) {
+      onLoaded(scheme, file);
     });
-
-    this._setScheme(scheme);
   };
 
   /**

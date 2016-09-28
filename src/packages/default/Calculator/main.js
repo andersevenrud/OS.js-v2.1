@@ -141,6 +141,10 @@
   ApplicationCalculatorWindow.prototype.operation = function(val) {
     var self = this;
 
+    if (this.temp == '' && ['plus', 'minus', 'multiply', 'divide'].indexOf(val) !== -1) {
+      this.temp = this._scheme.find(this, 'Output').get('value');
+    }
+
     function getAnswer() {
       var nt = Number(self.entries[0]);
 
@@ -160,7 +164,7 @@
       }
 
       if ( nt < 0 ) {
-        nt = Math.abs(nt) + '-';
+        nt = '-' + Math.abs(nt);
       }
 
       return nt;
@@ -234,17 +238,10 @@
   ApplicationCalculator.prototype = Object.create(Application.prototype);
   ApplicationCalculator.constructor = Application;
 
-  ApplicationCalculator.prototype.init = function(settings, metadata) {
+  ApplicationCalculator.prototype.init = function(settings, metadata, scheme) {
     Application.prototype.init.apply(this, arguments);
 
-    var self = this;
-    var url = API.getApplicationResource(this, './scheme.html');
-    var scheme = GUI.createScheme(url);
-    scheme.load(function(error, result) {
-      self._addWindow(new ApplicationCalculatorWindow(self, metadata, scheme));
-    });
-
-    this._setScheme(scheme);
+    this._addWindow(new ApplicationCalculatorWindow(this, metadata, scheme));
   };
 
   /////////////////////////////////////////////////////////////////////////////

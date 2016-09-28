@@ -6,7 +6,7 @@
     "bg_BG": "Текст",
     "de_DE": "Writer",
     "fr_FR": "Traitement de texte",
-    "it_IT": "Writer",
+    "it_IT": "Editor Testi",
     "ko_KR": "글쓰기",
     "nl_NL": "Tekstverwerker",
     "no_NO": "Writer",
@@ -51,6 +51,10 @@
     {
       "src": "main.css",
       "type": "stylesheet"
+    },
+    {
+      "src": "scheme.html",
+      "type": "scheme"
     }
   ]
 }

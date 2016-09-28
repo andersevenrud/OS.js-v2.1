@@ -136,17 +136,10 @@
   CoreWM.constructor = WindowManager;
 
   CoreWM.prototype.init = function() {
-    var self = this;
     var link = (OSjs.Core.getConfig().Connection.RootURI || '/') + 'blank.css';
 
     this.setThemeLink(Utils.checkdir(link));
     this.setAnimationLink(Utils.checkdir(link));
-
-    this._on(/^vfs\:(?!(un)?mount)/, function(file, options, msg) {
-      if ( (msg === 'vfs:unlink' || msg === 'vfs:delete') && file.path ) {
-        self.iconView.removeShortcutByPath(file.path);
-      }
-    });
 
     WindowManager.prototype.init.apply(this, arguments);
   };
@@ -222,7 +215,6 @@
       var desktopPath = self.getSetting('desktopPath');
 
       function _check(f) {
-        var t = Utils.dirname(f.path);
         return f.path.substr(0, desktopPath.length) === desktopPath;
       }
 
@@ -609,8 +601,6 @@
   };
 
   CoreWM.prototype.onDropFile = function(ev, el, files, args) {
-    var self = this;
-
     VFS.upload({
       destination: 'desktop:///',
       files: files
@@ -798,7 +788,6 @@
   CoreWM.prototype._getNotificationArea = function(panelId) {
     panelId = panelId || 0;
     var panel  = this.panels[panelId];
-    var result = null;
     if ( panel ) {
       return panel.getItem(OSjs.Applications.CoreWM.PanelItems.NotificationArea, false);
     }
@@ -844,18 +833,20 @@
     return false;
   };
 
-  CoreWM.prototype.openDesktopMenu = function(ev) {
+  CoreWM.prototype._getContextMenu = function(arg) {
     var self = this;
+    var menu = [];
 
-    if ( this._emit('wm:contextmenu', [ev, this]) === false ) {
-      return;
+    if ( this.iconView ) {
+      menu = this.iconView._getContextMenu(arg);
     }
 
-    var menu = [
-      {title: OSjs.Applications.CoreWM._('Open settings'), onClick: function(ev) {
+    menu.push({
+      title: OSjs.Applications.CoreWM._('Open settings'),
+      onClick: function(ev) {
         self.showSettings();
-      }}
-    ];
+      }
+    });
 
     if ( this.getSetting('enableIconView') === true ) {
       menu.push({
@@ -873,6 +864,15 @@
       });
     }
 
+    return menu;
+  };
+
+  CoreWM.prototype.openDesktopMenu = function(ev) {
+    if ( this._emit('wm:contextmenu', [ev, this]) === false ) {
+      return;
+    }
+
+    var menu = this._getContextMenu();
     API.createMenu(menu, ev);
   };
 

@@ -55,7 +55,6 @@
   MountWindow.prototype.init = function(wm, app, scheme) {
     var root = Window.prototype.init.apply(this, arguments);
     var self = this;
-    var view;
 
     // Load and set up scheme (GUI) here
     scheme.render(this, 'MountWindow', root, null, null, {
@@ -111,6 +110,7 @@
       height: 420
     }, app, scheme]);
 
+    this.wasFileDropped = false;
     this.currentPath = path;
     this.currentSummary = {};
     this.viewOptions = Utils.argumentDefaults(settings || {}, {
@@ -134,6 +134,7 @@
     this._on('drop:file', function(ev, src) {
       if ( Utils.dirname(src.path) !== self.currentPath ) {
         var dst = new VFS.File(Utils.pathJoin(self.currentPath, src.filename));
+        self.wasFileDropped = dst;
         app.copy(src, dst, self);
       }
     });
@@ -265,13 +266,15 @@
     };
 
     function menuEvent(ev) {
-      if ( menuMap[ev.detail.id] ) {
-        menuMap[ev.detail.id]();
+      var f = ev.detail.func || ev.detail.id;
+      if ( menuMap[f] ) {
+        menuMap[f]();
       }
     }
 
     scheme.find(this, 'SubmenuFile').on('select', menuEvent);
-    var editMenu = scheme.find(this, 'SubmenuEdit').on('select', menuEvent);
+    var contextMenu = scheme.find(this, 'SubmenuContext').on('select', menuEvent);
+    scheme.find(this, 'SubmenuEdit').on('select', menuEvent);
     var viewMenu = scheme.find(this, 'SubmenuView').on('select', menuEvent);
 
     viewMenu.set('checked', 'MenuViewList', viewType === 'gui-list-view');
@@ -324,7 +327,7 @@
       if ( ev && ev.detail && ev.detail.entries ) {
         self.checkSelection(ev.detail.entries);
       }
-      editMenu.show(ev);
+      contextMenu.show(ev);
     });
 
     //
@@ -374,6 +377,12 @@
       scheme.find(self, 'MenuInfo').set('disabled', MODE_FD);  // TODO: Directory info must be supported
       scheme.find(self, 'MenuDownload').set('disabled', MODE_F);
       scheme.find(self, 'MenuOpen').set('disabled', MODE_F);
+
+      scheme.find(self, 'ContextMenuRename').set('disabled', MODE_FD);
+      scheme.find(self, 'ContextMenuDelete').set('disabled', MODE_FD);
+      scheme.find(self, 'ContextMenuInfo').set('disabled', MODE_FD);  // TODO: Directory info must be supported
+      scheme.find(self, 'ContextMenuDownload').set('disabled', MODE_F);
+      scheme.find(self, 'ContextMenuOpen').set('disabled', MODE_F);
     }
 
     if ( files && files.length ) {
@@ -490,9 +499,9 @@
     }
   };
 
-  ApplicationFileManagerWindow.prototype.onFileEvent = function(chk) {
+  ApplicationFileManagerWindow.prototype.onFileEvent = function(chk, isDest) {
     if ( (this.currentPath === Utils.dirname(chk.path)) || (this.currentPath === chk.path) ) {
-      this.changePath(null);
+      this.changePath(null, this.wasFileDropped, false, false, !this.wasFileDroped);
     }
   };
 
@@ -512,10 +521,11 @@
     }
   };
 
-  ApplicationFileManagerWindow.prototype.changePath = function(dir, selectFile, isNav, isInput) {
+  ApplicationFileManagerWindow.prototype.changePath = function(dir, selectFile, isNav, isInput, applyScroll) {
     if ( this._destroyed || !this._scheme ) {
       return;
     }
+    this.wasFileDropped = false;
 
     //if ( dir === this.currentPath ) { return; }
     dir = dir || this.currentPath;
@@ -577,7 +587,9 @@
         self.updateSideView();
 
         if ( selectFile && view ) {
-          view.set('selected', selectFile.filename, 'filename');
+          view.set('selected', selectFile.filename, 'filename', {
+            scroll: applyScroll
+          });
         }
 
         updateNavigation();
@@ -728,14 +740,11 @@
     return Application.prototype.destroy.apply(this, arguments);
   };
 
-  ApplicationFileManager.prototype.init = function(settings, metadata) {
+  ApplicationFileManager.prototype.init = function(settings, metadata, scheme) {
     Application.prototype.init.apply(this, arguments);
 
     var self = this;
     var path = this._getArgument('path') || API.getDefaultPath();
-
-    var url = API.getApplicationResource(this, './scheme.html');
-    var scheme = GUI.createScheme(url);
 
     this._on('vfs', function(msg, obj) {
       var win = self._getMainWindow();
@@ -744,7 +753,7 @@
           win.onMountEvent(obj, msg);
         } else {
           if ( obj.destination ) {
-            win.onFileEvent(obj.destination);
+            win.onFileEvent(obj.destination, true);
             win.onFileEvent(obj.source);
           } else {
             win.onFileEvent(obj);
@@ -753,11 +762,7 @@
       }
     });
 
-    scheme.load(function(error, result) {
-      self._addWindow(new ApplicationFileManagerWindow(self, metadata, scheme, path, settings));
-    });
-
-    this._setScheme(scheme);
+    this._addWindow(new ApplicationFileManagerWindow(this, metadata, scheme, path, settings));
   };
 
   ApplicationFileManager.prototype.download = function(items) {
@@ -950,7 +955,7 @@
           API.error(API._('ERR_GENERIC_APP_FMT', self.__label), API._('ERR_GENERIC_APP_REQUEST'), error);
           return;
         }
-        win.changePath(null, file);
+        win.changePath(null, file, false, false, true);
       });
     }
 
@@ -961,7 +966,7 @@
         dest: dest
       }, function(ev, button, result) {
         if ( result ) {
-          win.changePath(null, result.filename);
+          win.changePath(null, result);
         }
       }, win);
     }
@@ -984,7 +989,6 @@
     notificationWasDisplayed[type] = true;
 
     var wm = OSjs.Core.getWindowManager();
-    var ha = OSjs.Core.getHandler();
     if ( wm ) {
       wm.notification({
         title: 'External Storage',

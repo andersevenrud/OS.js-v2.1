@@ -42,7 +42,6 @@
   var DefaultLocale = 'en_EN';
   var CurrentLocale = 'en_EN';
 
-  var _MENU;              // Current open 'OSjs.GUI.Menu'
   var _CLIPBOARD;         // Current 'clipboard' data
 
   var _hooks = {
@@ -357,7 +356,6 @@
 
     var settingsManager = OSjs.Core.getSettingsManager();
     var wm = OSjs.Core.getWindowManager();
-    var handler = OSjs.Core.getHandler();
     var args = {file: file};
 
     function getApplicationNameByFile(file, forceList, callback) {
@@ -487,8 +485,6 @@
       }, 500);
     }
 
-    OSjs.GUI.Scheme.clearCache(); // TODO Only for requested application
-
     OSjs.API.getProcess(n).forEach(relaunch);
   };
 
@@ -515,7 +511,6 @@
     var instance = null;
     var pargs = {};
 
-    var handler = OSjs.Core.getHandler();
     var packman = OSjs.Core.getPackageManager();
     var compability = Utils.getCompability();
     var metadata = packman.getPackage(name);
@@ -660,12 +655,12 @@
     }
 
     function _preload(cb) {
-      Utils.preload(preloads, function(total, failed) {
+      Utils.preload(preloads, function(total, failed, succeeded, data) {
         if ( failed.length ) {
           cb(OSjs.API._('ERR_APP_PRELOAD_FAILED_FMT', name, failed.join(',')));
         } else {
           setTimeout(function() {
-            cb(false);
+            cb(false, data);
           }, 0);
         }
       }, function(progress, count) {
@@ -675,7 +670,7 @@
       }, pargs);
     }
 
-    function _createProcess(cb) {
+    function _createProcess(preloadData, cb) {
       function __onprocessinitfailed() {
         if ( instance ) {
           try {
@@ -698,36 +693,56 @@
         return;
       }
 
-      try {
-        instance = new OSjs.Applications[name].Class(args, metadata);
+      function __onschemesloaded(scheme) {
+        try {
+          if ( metadata.classType === 'simple' ) {
+            instance = new OSjs.Core.Application(name, args, metadata);
+            OSjs.Applications[name].run(instance);
+          } else {
+            instance = new OSjs.Applications[name].Class(args, metadata);
+          }
 
-        (onconstruct || function() {})(instance, metadata);
-      } catch ( e ) {
-        console.warn('Error on constructing application', e, e.stack);
-        __onprocessinitfailed();
-        cb(OSjs.API._('ERR_APP_CONSTRUCT_FAILED_FMT', name, e), e);
-        return;
+          (onconstruct || function() {})(instance, metadata);
+        } catch ( e ) {
+          console.warn('Error on constructing application', e, e.stack);
+          __onprocessinitfailed();
+          cb(OSjs.API._('ERR_APP_CONSTRUCT_FAILED_FMT', name, e), e);
+          return false;
+        }
+
+        try {
+          var settings = OSjs.Core.getSettingsManager().get(instance.__pname) || {};
+          instance.init(settings, metadata, scheme);
+
+          API.triggerHook('onApplicationLaunched', [{
+            application: instance,
+            name: name,
+            args: args,
+            settings: settings,
+            metadata: metadata
+          }]);
+        } catch ( ex ) {
+          console.warn('Error on init() application', ex, ex.stack);
+          __onprocessinitfailed();
+          cb(OSjs.API._('ERR_APP_INIT_FAILED_FMT', name, ex.toString()), ex);
+          return false;
+        }
+
+        return true;
       }
 
-      try {
-        var settings = OSjs.Core.getSettingsManager().get(instance.__pname) || {};
-        instance.init(settings, metadata, function() {}); // NOTE: Empty function is for backward-compability
-
-        API.triggerHook('onApplicationLaunched', [{
-          application: instance,
-          name: name,
-          args: args,
-          settings: settings,
-          metadata: metadata
-        }]);
-      } catch ( ex ) {
-        console.warn('Error on init() application', ex, ex.stack);
-        __onprocessinitfailed();
-        cb(OSjs.API._('ERR_APP_INIT_FAILED_FMT', name, ex.toString()), ex);
-        return;
+      var scheme = null;
+      if ( preloadData ) {
+        preloadData.forEach(function(f) {
+          if ( !scheme && f.item.type === 'scheme' ) {
+            scheme = f.data;
+          }
+        });
       }
 
-      cb(false, true);
+      if ( __onschemesloaded(scheme) ) {
+        cb(false, true);
+      }
     }
 
     if ( !name ) {
@@ -762,7 +777,7 @@
             _onError(err, res);
           } else {
             try {
-              _createProcess(function(err, res) {
+              _createProcess(res, function(err, res) {
                 if ( err ) {
                   _onError(err, res);
                 } else {

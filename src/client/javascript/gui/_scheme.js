@@ -30,9 +30,6 @@
 (function(API, Utils, VFS, GUI) {
   'use strict';
 
-  var dialogScheme;
-  var schemeCache = {};
-
   /////////////////////////////////////////////////////////////////////////////
   // INTERNAL HELPERS
   /////////////////////////////////////////////////////////////////////////////
@@ -101,14 +98,14 @@
       if ( nodes.length ) {
         nodes.forEach(function(el) {
           var id = el.getAttribute('data-fragment-id');
-          var frag = scheme.getFragment(id, 'application-fragment').cloneNode(true);
-
-          addChildren(frag, el.parentNode);
-          Utils.$remove(el);
+          if ( id ) {
+            var frag = scheme.getFragment(id, 'application-fragment').cloneNode(true);
+            addChildren(frag, el.parentNode);
+          }
+          Utils.$remove(el); // Or else we'll never get out of the loop!
         });
         return true;
       }
-
       return false;
     }
 
@@ -118,6 +115,58 @@
         resolving = _resolve();
       }
     }
+  }
+
+  /**
+   * Makes sure "external include" fragments are rendered correctly.
+   *
+   * Currently this only supports one level deep.
+   *
+   * This occurs on the load() function instead on runtime due to
+   * performance concerns.
+   */
+  function resolveExternalFragments(root, html, cb) {
+    var doc = document.createElement('div');
+    doc.innerHTML = html;
+
+    var nodes = doc.querySelectorAll('gui-fragment[data-fragment-external]');
+
+    Utils.asyncs(nodes.map(function(el) {
+      return {
+        element: el,
+        uri: el.getAttribute('data-fragment-external')
+      };
+    }), function(iter, index, next) {
+      var uri = iter.uri.replace(/^\//, '');
+      if ( uri.length < 3 ) {
+        console.warn('resolveExternalFragments()', 'invalid', iter);
+        return next();
+      }
+
+      var url = Utils.pathJoin(root, uri);
+
+      Utils.ajax({
+        url: url,
+        onsuccess: function(h) {
+          var tmp = document.createElement('div');
+          tmp.innerHTML = h;
+
+          addChildren(tmp, iter.element.parentNode);
+          Utils.$remove(iter.element);
+          tmp = null;
+
+          next();
+        },
+        onerror: function() {
+          next();
+        }
+      });
+    }, function() {
+      cb(doc.innerHTML);
+
+      doc = null;
+      nodes = null;
+    });
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -225,7 +274,9 @@
   UIScheme.prototype.loadString = function(html, cb) {
     console.debug('UIScheme::loadString()');
     this._load(html);
-    cb(false, this.scheme);
+    if ( cb ) {
+      cb(false, this.scheme);
+    }
   };
 
   /**
@@ -234,50 +285,48 @@
    * @function load
    * @memberof OSjs.GUI.Scheme#
    *
-   * @param   {Function}    cb      callback => fn(error, scheme)
+   * @param   {Function}    cb      callback => fn(error, DocumentFragment)
+   * @param   {Function}    [cbxhr] callback on ajax => fn(error, html)
    */
-  UIScheme.prototype.load = function(cb) {
-    var self = this;
+  UIScheme.prototype.load = function(cb, cbxhr) {
+    cbxhr = cbxhr || function() {};
 
     if ( window.location.protocol.match(/^file/) ) {
       var url = this.url;
       if ( !url.match(/^\//) ) {
         url = '/' + url;
       }
-      self._load(OSjs.API.getDefaultSchemes(url.replace(/^\/packages/, '')));
-      cb(false, self.scheme);
-      return;
-    }
-
-    function _done(html, saveCache) {
-      if ( saveCache ) {
-        schemeCache[self.url] = html;
-      }
-
-      self._load(html);
-      cb(false, self.scheme);
-    }
-
-    if ( schemeCache[this.url] ) {
-      console.debug('UIScheme::load()', this.url, 'WAS CACHED!');
-      _done(schemeCache[this.url]);
+      this._load(OSjs.API.getDefaultSchemes(url.replace(/^\/packages/, '')));
+      cb(false, this.scheme);
       return;
     }
 
     console.debug('UIScheme::load()', this.url);
 
+    var self = this;
     var src = this.url;
     if ( src.substr(0, 1) !== '/' && !src.match(/^(https?|ftp)/) ) {
       src = window.location.pathname + src;
     }
 
+    var root = Utils.dirname(src);
     Utils.ajax({
       url: src,
       onsuccess: function(html) {
-        _done(html, true);
+        resolveExternalFragments(root, html, function(result) {
+          // This is normally used for the preloader for caching
+          cbxhr(false, result);
+
+          // Then we run some manipulations
+          self._load(result);
+
+          // And finally, finish
+          cb(false, self.scheme);
+        });
       },
       onerror: function() {
         cb('Failed to fetch scheme');
+        cbxhr(true);
       }
     });
   };
@@ -321,7 +370,6 @@
    * @return  {Node}
    */
   UIScheme.prototype.parse = function(id, type, win, onparse, args) {
-    var self = this;
     var content = this.getFragment(id, type);
 
     console.debug('UIScheme::parse()', id);
@@ -608,14 +656,6 @@
       }
     }
     return new GUI.Element(el, q);
-  };
-
-  /**
-   * @function clearCache
-   * @memberof OSjs.GUI.Scheme
-   */
-  UIScheme.clearCache = function() {
-    schemeCache = {};
   };
 
   /////////////////////////////////////////////////////////////////////////////

@@ -100,13 +100,7 @@
    * Applies DOM changes for a row to be rendered properly
    */
   function initRow(el, row) {
-    var cols = el.querySelectorAll('gui-list-view-head gui-list-view-column');
-    var headContainer = el.querySelector('gui-list-view-head');
-
     row.querySelectorAll('gui-list-view-column').forEach(function(cel, idx) {
-      var cl = cols.length;
-      var x = cl ? idx % cl : idx;
-
       var icon = cel.getAttribute('data-icon');
       if ( icon && icon !== 'null' ) {
         Utils.$addClass(cel, 'gui-has-image');
@@ -239,7 +233,7 @@
       return GUI.Helpers.getProperty(el, param);
     },
 
-    set: function(el, param, value, arg) {
+    set: function(el, param, value, arg, arg2) {
       if ( param === 'columns' ) {
         var head = el.querySelector('gui-list-view-head');
         var row = document.createElement('gui-list-view-row');
@@ -266,7 +260,7 @@
         return true;
       } else if ( param === 'selected' || param === 'value' ) {
         var body = el.querySelector('gui-list-view-body');
-        GUI.Elements._dataview.setSelected(el, body, body.querySelectorAll('gui-list-view-row'), value, arg);
+        GUI.Elements._dataview.setSelected(el, body, body.querySelectorAll('gui-list-view-row'), value, arg, arg2);
         return true;
       }
 
@@ -361,6 +355,10 @@
           visible: vis === null || vis === 'true',
           size: cel.getAttribute('data-size')
         };
+
+        if ( iter.size ) {
+          cel.style.width = iter.size;
+        }
 
         el._columns.push(iter);
 

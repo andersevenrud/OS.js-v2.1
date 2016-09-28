@@ -523,7 +523,6 @@
     console.debug('initSession()');
     OSjs.API.playSound('service-login');
 
-    var wm = OSjs.Core.getWindowManager();
     var list = [];
 
     // In this case we merge the Autostart and the previous session together.
@@ -729,7 +728,6 @@
     window.onerror = null;
     window.onbeforeunload = null;
 
-    OSjs.GUI.Scheme.clearCache();
     OSjs.API.toggleFullscreen();
     OSjs.API.blurMenu();
     OSjs.API.killAll();

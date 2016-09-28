@@ -6,7 +6,7 @@
     "bg_BG": "Рисуване",
     "de_DE": "Zeichnen",
     "fr_FR": "Dessin",
-    "it_IT": "Disegna!",
+    "it_IT": "Disegna",
     "ko_KR": "그림판",
     "nl_NL": "Tekenen",
     "no_NO": "Tegne",
@@ -36,9 +36,7 @@
   "preload":    [
     {"src": "locales.js", "type": "javascript"},
     {"src": "main.js", "type": "javascript"},
-    {"src": "main.css", "type": "stylesheet"}
+    {"src": "main.css", "type": "stylesheet"},
+    {"src": "scheme.html", "type": "scheme"}
   ]
 }
-
-
-

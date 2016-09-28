@@ -31,55 +31,38 @@
   'use strict';
 
   /////////////////////////////////////////////////////////////////////////////
-  // WINDOWS
-  /////////////////////////////////////////////////////////////////////////////
-
-  function ApplicationAboutWindow(app, metadata, scheme) {
-    Window.apply(this, ['ApplicationAboutWindow', {
-      icon: metadata.icon,
-      title: metadata.name,
-      gravity: 'center',
-      allow_resize: false,
-      allow_maximize: false,
-      width: 320,
-      height: 320,
-      min_width: 320,
-      min_height: 320
-    }, app, scheme]);
-  }
-
-  ApplicationAboutWindow.prototype = Object.create(Window.prototype);
-  ApplicationAboutWindow.constructor = Window.prototype;
-
-  ApplicationAboutWindow.prototype.init = function(wm, app, scheme) {
-    var root = Window.prototype.init.apply(this, arguments);
-    scheme.render(this, 'AboutWindow', root);
-    root.getElementsByTagName('img')[0].src = API.getApplicationResource(app, 'about.png');
-    return root;
-  };
-
-  /////////////////////////////////////////////////////////////////////////////
   // APPLICATION
   /////////////////////////////////////////////////////////////////////////////
 
-  var ApplicationAbout = function(args, metadata) {
-    Application.apply(this, ['ApplicationAbout', args, metadata]);
-  };
+  function runApplication(app) {
+    app._on('init', function(settings, metadata, scheme) {
+      // Create Window when application has been initialized
+      var win = new Window('EXAMPLEWindow', {
+        icon: metadata.icon,
+        title: metadata.name,
+        width: 400,
+        height: 200
+      }, app, scheme);
 
-  ApplicationAbout.prototype = Object.create(Application.prototype);
-  ApplicationAbout.constructor = Application;
+      win._on('init', function(root, scheme) {
+        // Window was inited
+        scheme.render(this, this._name, root);
+      });
 
-  ApplicationAbout.prototype.init = function(settings, metadata, scheme) {
-    Application.prototype.init.apply(this, arguments);
-    this._addWindow(new ApplicationAboutWindow(this, metadata, scheme));
-  };
+      win._on('inited', function(scheme) {
+        // Window inited and rendered
+      });
+
+      app._addWindow(win);
+    });
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // EXPORTS
   /////////////////////////////////////////////////////////////////////////////
 
-  OSjs.Applications = OSjs.Applications || {};
-  OSjs.Applications.ApplicationAbout = OSjs.Applications.ApplicationAbout || {};
-  OSjs.Applications.ApplicationAbout.Class = Object.seal(ApplicationAbout);
+  OSjs.Applications.ApplicationEXAMPLE = {
+    run: runApplication
+  };
 
 })(OSjs.Core.Application, OSjs.Core.Window, OSjs.Utils, OSjs.API, OSjs.VFS, OSjs.GUI);

@@ -30,6 +30,16 @@
 (function(Utils, API, Process) {
   'use strict';
 
+  /**
+   * Look at the 'ProcessEvent' for more.
+   * The predefined events are as follows:
+   *
+   * <pre><code>
+   *  init        When application was inited              => (settings, metadata, scheme)
+   * </code></pre>
+   * @typedef ApplicationEvent
+   */
+
   /////////////////////////////////////////////////////////////////////////////
   // APPLICATION
   /////////////////////////////////////////////////////////////////////////////
@@ -46,10 +56,10 @@
    *
    * @summary Class used for basis as an Application.
    *
-   * @param   {String}    name      Process name
-   * @param   {Object}    args      Process arguments
-   * @param   {Metadata}  metadata  Application metadata
-   * @param   {Object}    settings  Application settings
+   * @param   {String}            name        Process name
+   * @param   {Object}            args        Process arguments
+   * @param   {Metadata}          metadata    Application metadata
+   * @param   {Object}            [settings]  Application settings
    *
    * @link https://os.js.org/doc/tutorials/create-application.html
    * @link https://os.js.org/doc/tutorials/application-with-server-api.html
@@ -132,10 +142,11 @@
    * @function init
    * @memberof OSjs.Core.Application#
    *
-   * @param   {Object}    settings      Settings JSON
-   * @param   {Metadata}  metadata      Metadata JSON
+   * @param   {Object}            settings      Settings JSON
+   * @param   {Metadata}          metadata      Metadata JSON
+   * @param   {OSjs.GUI.Scheme}   [scheme]      GUI Scheme instance
    */
-  Application.prototype.init = function(settings, metadata) {
+  Application.prototype.init = function(settings, metadata, scheme) {
 
     var wm = OSjs.Core.getWindowManager();
     var self = this;
@@ -160,11 +171,17 @@
     if ( !this.__inited ) {
       console.debug('Application::init()', this.__pname);
 
+      if ( scheme ) {
+        this._setScheme(scheme);
+      }
+
       this.__settings.set(null, settings);
 
-      focusLastWindow();
-
       this.__inited = true;
+
+      this.__evHandler.emit('init', [settings, metadata, scheme]);
+
+      focusLastWindow();
     }
   };
 
@@ -177,8 +194,6 @@
    * @see OSjs.Core.Process#destroy
    */
   Application.prototype.destroy = function(sourceWid) {
-    var self = this;
-
     if ( this.__destroying || this.__destroyed ) { // From 'process.js'
       return true;
     }
@@ -239,6 +254,8 @@
 
   /**
    * Default method for loading a Scheme file
+   *
+   * @TODO DEPRECATED This is kept for backward compability
    *
    * @function _loadScheme
    * @memberof OSjs.Core.Application#
@@ -463,6 +480,17 @@
     });
 
     return data;
+  };
+
+  /**
+   * Gets the scheme instance
+   *
+   * @function _getScheme
+   * @memberof OSjs.Core.Application#
+   * @return OSjs.GUI.Scheme
+   */
+  Application.prototype._getScheme = function() {
+    return this.__scheme;
   };
 
   /**

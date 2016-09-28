@@ -40,7 +40,6 @@
   }
 
   function installSelected(download, cb) {
-    var handler = OSjs.Core.getHandler();
     var pacman = OSjs.Core.getPackageManager();
 
     var file = new VFS.File(download, 'application/zip');
@@ -99,7 +98,6 @@
     // Load and set up scheme (GUI) here
     scheme.render(this, 'PackageManagerWindow', root);
 
-    var handler = OSjs.Core.getHandler();
     var pacman = OSjs.Core.getPackageManager();
     var sm = OSjs.Core.getSettingsManager();
 
@@ -273,17 +271,9 @@
     return Application.prototype.destroy.apply(this, arguments);
   };
 
-  ApplicationPackageManager.prototype.init = function(settings, metadata) {
+  ApplicationPackageManager.prototype.init = function(settings, metadata, scheme) {
     Application.prototype.init.apply(this, arguments);
-
-    var self = this;
-    var url = API.getApplicationResource(this, './scheme.html');
-    var scheme = GUI.createScheme(url);
-    scheme.load(function(error, result) {
-      self._addWindow(new ApplicationPackageManagerWindow(self, metadata, scheme));
-    });
-
-    this._setScheme(scheme);
+    this._addWindow(new ApplicationPackageManagerWindow(this, metadata, scheme));
   };
 
   /////////////////////////////////////////////////////////////////////////////
