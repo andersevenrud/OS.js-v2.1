@@ -95,13 +95,15 @@
     function showWIFIContextMenu(ev) {
       self.pollWireless(function(result) {
         var menuItems = [];
-        Object.keys(result).forEach(function(k) {
-          var val = result[k];
-          menuItems.push({
-            titleHTML: true,
-            title: Utils.format('<b>{0}:</b> {1}', k, Utils.$escape(String(val)))
+        if ( result && typeof result === 'object' ) {
+          Object.keys(result).forEach(function(k) {
+            var val = result[k];
+            menuItems.push({
+              titleHTML: true,
+              title: Utils.format('<b>{0}:</b> {1}', k, Utils.$escape(String(val)))
+            });
           });
-        });
+        }
         OSjs.API.createMenu(menuItems, ev);
       });
     }
