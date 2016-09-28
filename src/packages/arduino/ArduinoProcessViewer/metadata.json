@@ -5,6 +5,7 @@
   "icon":       "apps/gnome-monitor.png",
   "category":   "arduino",
   "preload":    [
+    {"src": "scheme.html", "type": "scheme"},
     {"src": "main.js", "type": "javascript"},
     {"src": "main.css", "type": "stylesheet"}
   ]

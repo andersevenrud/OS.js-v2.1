@@ -323,7 +323,6 @@
     });
   }
 
-
   ApplicationArduinoCiaoConfiguratorWindow.prototype.destroy = function() {
     Window.prototype.destroy.apply(this, arguments);
   };
@@ -343,18 +342,9 @@
     return Application.prototype.destroy.apply(this, arguments);
   };
 
-  ApplicationArduinoCiaoConfigurator.prototype.init = function(settings, metadata, onInited) {
+  ApplicationArduinoCiaoConfigurator.prototype.init = function(settings, metadata, scheme) {
     Application.prototype.init.apply(this, arguments);
-
-    var self = this;
-    var url = API.getApplicationResource(this, './scheme.html');
-    var scheme = GUI.createScheme(url);
-    scheme.load(function(error, result) {
-      self._addWindow(new ApplicationArduinoCiaoConfiguratorWindow(self, metadata, scheme));
-      onInited();
-    });
-
-    this._setScheme(scheme);
+    this._addWindow(new ApplicationArduinoCiaoConfiguratorWindow(this, metadata, scheme));
   };
 
   /////////////////////////////////////////////////////////////////////////////

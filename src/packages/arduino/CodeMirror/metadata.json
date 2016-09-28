@@ -26,6 +26,7 @@
     {"src": "vendor/CodeMirror/mode/shell/shell.js", "type": "javascript"},
     {"src": "vendor/CodeMirror/lib/codemirror.css", "type": "stylesheet"},
     {"src": "vendor/CodeMirror/theme/material.css", "type": "stylesheet"},
+    {"src": "scheme.html", "type": "scheme"},
     {"src": "main.js", "type": "javascript"},
     {"src": "main.css", "type": "stylesheet"}
   ]

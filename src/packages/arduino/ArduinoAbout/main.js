@@ -78,17 +78,9 @@
     return Application.prototype.destroy.apply(this, arguments);
   };
 
-  ApplicationArduinoAbout.prototype.init = function(settings, metadata) {
+  ApplicationArduinoAbout.prototype.init = function(settings, metadata, scheme) {
     Application.prototype.init.apply(this, arguments);
-
-    var self = this;
-    var url = API.getApplicationResource(this, './scheme.html');
-    var scheme = GUI.createScheme(url);
-    scheme.load(function(error, result) {
-      self._addWindow(new ApplicationArduinoAboutWindow(self, metadata, scheme));
-    });
-
-    this._setScheme(scheme);
+    this._addWindow(new ApplicationArduinoAboutWindow(this, metadata, scheme));
   };
 
   /////////////////////////////////////////////////////////////////////////////

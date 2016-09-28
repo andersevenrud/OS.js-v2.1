@@ -126,8 +126,8 @@ rm $OUTDIR/dist/packages/*/*/metadata.json 2>/dev/null
 rm $OUTDIR/dist/packages/*/*/api.js 2>/dev/null
 rm $OUTDIR/dist/packages/*/*/api.php 2>/dev/null
 rm $OUTDIR/dist/packages/*/*/server.lua 2>/dev/null
-rm $OUTDIR/dist/packages/target/CoreWM/panelitems 2>/dev/null
-rm $OUTDIR/dist/packages/target/CodeMirror/vendor 2>/dev/null
+rm -r $OUTDIR/dist/packages/target/CoreWM/panelitems 2>/dev/null
+rm -r $OUTDIR/dist/packages/target/CodeMirror/vendor 2>/dev/null
 
 #  rm $OUTDIR/dist/osjs.js 2>/dev/null
 #  rm $OUTDIR/dist/osjs.css 2>/dev/null

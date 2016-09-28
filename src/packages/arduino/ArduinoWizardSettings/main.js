@@ -551,6 +551,8 @@
             getCurrentWifiSettings(function() {
               scanNetworks(function() {
                 self._toggleLoading(false);
+
+                toggleVisibility();
               });
             });
           });
@@ -586,17 +588,10 @@
         });
     };
 
-    ApplicationArduinoWizardSettings.prototype.init = function (settings, metadata) {
+    ApplicationArduinoWizardSettings.prototype.init = function (settings, metadata, scheme) {
         Application.prototype.init.apply(this, arguments);
 
-        var self = this;
-        var url = API.getApplicationResource(this, './scheme.html');
-        var scheme = GUI.createScheme(url);
-        scheme.load(function (error, result) {
-            self._addWindow(new ApplicationArduinoWizardSettingsWindow(self, metadata, scheme));
-        });
-
-        this._setScheme(scheme);
+        this._addWindow(new ApplicationArduinoWizardSettingsWindow(this, metadata, scheme));
     };
 
     /////////////////////////////////////////////////////////////////////////////

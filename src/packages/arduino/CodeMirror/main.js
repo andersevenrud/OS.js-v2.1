@@ -225,7 +225,7 @@
   ApplicationCodeMirror.prototype = Object.create(DefaultApplication.prototype);
   ApplicationCodeMirror.constructor = DefaultApplication;
 
-  ApplicationCodeMirror.prototype.init = function(settings, metadata) {
+  ApplicationCodeMirror.prototype.init = function(settings, metadata, scheme) {
     var self = this;
     DefaultApplication.prototype.init.call(this, settings, metadata, function(scheme, file) {
       self._addWindow(new ApplicationCodeMirrorWindow(self, metadata, scheme, file));

@@ -198,18 +198,10 @@
     return Application.prototype.destroy.apply(this, arguments);
   };
 
-  ApplicationArduinoPackageManager.prototype.init = function(settings, metadata) {
+  ApplicationArduinoPackageManager.prototype.init = function(settings, metadata, scheme) {
     Application.prototype.init.apply(this, arguments);
 
-    var self = this;
-    var url = API.getApplicationResource(this, './scheme.html');
-    var scheme = GUI.createScheme(url);
-    scheme.load(function(error, result) {
-      self._addWindow(new ApplicationArduinoPackageManagerWindow(self, metadata, scheme));
-      self.checkArguments(self.startupArgs);
-    });
-
-    this._setScheme(scheme);
+    this._addWindow(new ApplicationArduinoPackageManagerWindow(this, metadata, scheme));
   };
 
   ApplicationArduinoPackageManager.prototype._onMessage = function(obj, msg, args) {
